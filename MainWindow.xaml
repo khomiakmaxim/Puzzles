@@ -5,8 +5,209 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PuzzlesProj"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        
+        Title="Puzzles" Height="630" Width="800"><!---Підключення простору імен-->
+    <Grid Name="grdRoot" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"><!---Найзагальніший грід(розтягується на всю площину вікна)-->
+        <!--Бордер вікна-->
+        <Border Name="brdWindow" CornerRadius="1,1,1,1" BorderThickness="1" MouseLeftButtonDown="brdWindow_MouseLeftButtonDown">
+            <Border.Background>
+                <!--Заданий градієнт на весь бордер-->
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Offset="0.0" Color="Chocolate"/>
+                    <GradientStop Offset="0.5" Color="Brown"/>
+                    <GradientStop Offset="1.0" Color="Black"/>
+                </LinearGradientBrush>
+            </Border.Background>
+            <Border.BorderBrush>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Offset="0.0" Color="Chocolate"/>
+                    <GradientStop Offset="0.5" Color="Brown"/>
+                    <GradientStop Offset="1.0" Color="Chocolate"/>
+                </LinearGradientBrush>
+            </Border.BorderBrush>
+        </Border>
+        <!---Вікно відображення-->
+        <Grid Name="grdWindow" Margin="25,0,25,25">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="32"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="100"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RenderTransform><!---For following transformations-->
+                <ScaleTransform ScaleX="1.0" ScaleY="1.0"/>
+            </Grid.RenderTransform>
+            <!--Top section-->
+            <Grid Name="grdTop" Grid.Row="0" Grid.ColumnSpan="2" Margin="5" MouseEnter="grdTop_MouseEnter" HorizontalAlignment="Stretch">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="24"/>
+                    <ColumnDefinition Width="24"/>
+                    <ColumnDefinition Width="24"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" FontSize="18" Foreground="BlanchedAlmond" MouseLeftButtonUp="txtMinimize_MouseLeftButtonUp">Puzzles Project</TextBlock>
+                <TextBlock Grid.Column="1" Name="txtMinimize" FontFamily="Webdings" FontSize="20" Foreground="white" MouseLeftButtonUp="txtMinimize_MouseLeftButtonUp">0</TextBlock>
+                <TextBlock Grid.Column="2"  Name="txtMaximize" FontFamily="Webdings" FontSize="20" Foreground="White" MouseLeftButtonUp="txtMaximize_MouseLeftButtonUp">1</TextBlock>
+                <TextBlock Grid.Column="3"  Name="txtClose" FontFamily="Webdings" FontSize="20" Foreground="White" MouseLeftButtonUp="txtClose_MouseLeftButtonUp">r</TextBlock>
+            </Grid>
+            <!--Найлівіша бокова панель-->
+            <StackPanel Grid.Row="1" Width="100" HorizontalAlignment="Left" VerticalAlignment="Stretch" Background="Transparent" MouseEnter="StackPanel_MouseEnter">
+                <Button Name="btnNewPuzzle" Width="100" HorizontalAlignment="Center" Margin="10" Click="btnNewPuzzle_Click">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="60"/>
+                            <RowDefinition Height="24"/>
+                        </Grid.RowDefinitions>
+                        <Image Grid.Row="0" Source="Images/NewPuzzle.png"></Image>
+                        <TextBlock Grid.Row="1" FontSize="12" Text="New Puzzle"/>
+                    </Grid>
+                </Button>
+                <Button Name="btnShowImage" Width="100" HorizontalAlignment="Center" Margin="10" Click="btnLoad_Click" IsDefault="false">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="60"/>
+                            <RowDefinition Height="24"/>
+                        </Grid.RowDefinitions>
+                        <Image Grid.Row="0" Source="Images/ShowImage.png"/>
+                        <TextBlock Grid.Row="1" Name="txtShowImage" FontSize="12" Text="Show Image"/>
+                    </Grid>
+                </Button>
+                <Button Name="btnShowPuzzle" Width="100" HorizontalAlignment="Center" Margin="10" Click="btnShowPuzzle_Click" Visibility="Collapsed"><!--Will be changed by show puzzle-->
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="60"/>
+                            <RowDefinition Height="24"/>
+                        </Grid.RowDefinitions>
+                        <Image Grid.Row="0" Source="Images/ShowPuzzle.png"/>
+                        <TextBlock Grid.Row="1" Name="txtShowPuzzle" FontSize="12" Text="ShowPuzzle"/>
+                    </Grid>
+                </Button>
+                <!--Stack Panel for slider-->
+                    <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Zoom" HorizontalAlignment="Center" Background="Transparent" Foreground="BlanchedAlmond"/>
+                        <Slider Name="zoomSlider" Orientation="Vertical" Height="100" HorizontalAlignment="Center" MinHeight="0" Maximum="2" Value="1"/>
+                        <Grid Width="50">
+                            <TextBlock Text="200%" HorizontalAlignment="Center" VerticalAlignment="Top" Background="Transparent" Foreground="BlanchedAlmond"/>
+                            <TextBlock Text="100%" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent" Foreground="BlanchedAlmond"/>
+                            <TextBlock Text="0%" HorizontalAlignment="Center" VerticalAlignment="Bottom" Background="Transparent" Foreground="BlanchedAlmond"/>
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+            <!--Площина, на якій збирається пазл-->
+                <Grid Name="grdPuzzle" Grid.Row="1" Grid.Column="1" MouseEnter="grdPuzzle_MouseEnter">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="10"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <ScrollViewer Grid.Row="0" Name="scvPuzzle" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" HorizontalAlignment="Left" VerticalAlignment="Top"  Visibility="Visible">
+                    <Grid Background="White">
+                        <!---Полотно, на якому збиратиметься пазл -->
+                            <Canvas Name="cnvPuzzle" Margin="20" HorizontalAlignment="Left" VerticalAlignment="Top" Width="2000" Height="2000">
+                            <Canvas.RenderTransform>
+                                <!--Використовується DependencyProperties з зум слайдера-->
+                                <!--Дана частина коду відповідає за збільшення і зменшення масштабу-->
+                                    <ScaleTransform
+                                    ScaleX="{Binding ElementName=zoomSlider, Path=Value}"
+                                    ScaleY="{Binding ElementName=zoomSlider, Path=Value}"/>
+                            </Canvas.RenderTransform>
+                            <Canvas.Background>
+                                <!--Малюється сіра плитка-->
+                                    <DrawingBrush Viewport="0,0,0.1,0.1" TileMode="Tile" Opacity="1.0">
+                                    <DrawingBrush.Drawing>
+                                        <DrawingGroup>
+                                            <GeometryDrawing Brush="LightYellow">
+                                                <GeometryDrawing.Geometry>
+                                                    <RectangleGeometry Rect="0,0,100,100"/>
+                                                </GeometryDrawing.Geometry>
+                                            </GeometryDrawing>
+
+                                            <GeometryDrawing>
+                                                <GeometryDrawing.Geometry>
+                                                    <GeometryGroup>
+                                                        <RectangleGeometry Rect="0,0,50,50"/>
+                                                        <RectangleGeometry Rect="50,50,50,50"/>
+                                                    </GeometryGroup>
+                                                </GeometryDrawing.Geometry>
+                                                <GeometryDrawing.Brush>
+                                                    <LinearGradientBrush>
+                                                        <GradientStop Offset="0.0" Color="Gray"/>
+                                                        <GradientStop Offset="1.0" Color="Beige"/>
+                                                    </LinearGradientBrush>
+                                                </GeometryDrawing.Brush>
+                                            </GeometryDrawing>
+                                        </DrawingGroup>
+                                    </DrawingBrush.Drawing>
+                                </DrawingBrush>
+                                
+                                
+                            </Canvas.Background>
+                            
+                        </Canvas>
+                    </Grid>
+                </ScrollViewer>
+                <GridSplitter Grid.Row="1" Height="Auto" Width="Auto" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Cursor="SizeNS">
+                    <GridSplitter.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Offset="0.0" Color="Chocolate"/>
+                            <GradientStop Offset="0.5" Color="Brown"/>
+                            <GradientStop Offset="1.0" Color="Black"/>
+                        </LinearGradientBrush>
+                    </GridSplitter.Background>
+                </GridSplitter>
+                <!--Елемент, з якого вибираються пазли-->
+                    <ScrollViewer Grid.Row="2" Name="scvPickUp" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="Visible">
+                    <WrapPanel Name="pnlPickUp" Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left" Height="2000" Width="1000">
+                        <WrapPanel.RenderTransform>
+                            <!--Та ж трансформація що і з верхнім елементом-->
+                                <ScaleTransform
+                                ScaleX="{Binding ElementName=zoomSlider, Path=Value}"
+                                ScaleY="{Binding ElementName=zoomSlider, Path=Value}"/>
+                        </WrapPanel.RenderTransform>
+                        <WrapPanel.Background>
+                            <DrawingBrush Viewport="0,0,50,50" ViewportUnits="Absolute" TileMode="Tile" Opacity="1.0">
+                                <DrawingBrush.Drawing>
+                                    <DrawingGroup>
+                                        <GeometryDrawing Brush="BlanchedAlmond">
+                                            <GeometryDrawing.Geometry>
+                                                <RectangleGeometry Rect="0,0,100,100"/>
+                                            </GeometryDrawing.Geometry>
+                                        </GeometryDrawing>
+
+                                        <GeometryDrawing>
+                                            <GeometryDrawing.Geometry>
+                                                <GeometryGroup>
+                                                    <RectangleGeometry Rect="0,0,50,50"/>
+                                                    <RectangleGeometry Rect="50,50,50,50"/>
+                                                </GeometryGroup>
+                                            </GeometryDrawing.Geometry>
+                                            <GeometryDrawing.Brush>
+                                                <LinearGradientBrush>
+                                                    <GradientStop Offset="0.0" Color="Gray"/>
+                                                    <GradientStop Offset="1.0" Color="LightGray"/>
+                                                </LinearGradientBrush>
+                                            </GeometryDrawing.Brush>
+                                        </GeometryDrawing>
+                                    </DrawingGroup>
+                                </DrawingBrush.Drawing>
+                            </DrawingBrush>
+                        </WrapPanel.Background>
+                    </WrapPanel>
+                </ScrollViewer>
+            </Grid>
+            <!--Відображення цілого зображення-->
+                <ScrollViewer Name="scvImage" Grid.Row="1" Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" HorizontalAlignment="Left" VerticalAlignment="Bottom" Visibility="Visible">
+                <Image Name="imgShowImage" Width="2000" Height="2000" HorizontalAlignment="Left" VerticalAlignment="Top" Stretch="None">
+                    <Image.RenderTransform>
+                        <ScaleTransform
+                            ScaleX="{Binding ElementName=zoomSlider, Path=Value}"
+                            ScaleY="{Binding ElementName=zoomSlider, Path=Value}"/>
+                    </Image.RenderTransform>
+                </Image>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </Window>
