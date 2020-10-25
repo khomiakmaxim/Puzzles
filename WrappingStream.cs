@@ -6,8 +6,15 @@ using System.Linq;
 using System.Text;
 using System.IO;
 
+//даний клас використовується для поліпшення запису в файл і зчитування з файлу
+//посуті, якщо врапнутий потік вже діспознутий, то ми просто кидаємо ексепшн
+//якщо не врапати, то по ідеї є можливість застосовувати якісь методи до вже діспознутого потоку
 namespace PuzzlesProj
 {
+    //даний потік огортає інший потік. Найбільша користь з такого це те, що він не звільнює лежачий під ним потік, коли той 
+    //звілнюється  Виявляється що це корисно, коли використовуються такі класи як BinaryReader і CryptoStream, які керують
+    //потоками, які передають їм в конструктор
+        
     /// <summary>
 
     /// A <see cref="Stream"/> that wraps another stream. The major feature of <see cref="WrappingStream"/> is that it does not dispose the
@@ -30,7 +37,7 @@ namespace PuzzlesProj
         /// <param name="streamBase">The wrapped stream.</param>
 
         public WrappingStream(Stream streamBase)
-        {
+        {//проста ініціалізація
 
             // check parameters
 
@@ -54,6 +61,7 @@ namespace PuzzlesProj
 
         /// <returns><c>true</c> if the stream supports reading; otherwise, <c>false</c>.</returns>
 
+        //вказує чи даний потік може щось читати
         public override bool CanRead
         {
 
@@ -71,6 +79,7 @@ namespace PuzzlesProj
 
         /// <returns><c>true</c> if the stream supports seeking; otherwise, <c>false</c>.</returns>
 
+        //чи даний потік може щось шукати(встановлювати арбітрарне значення позиції курсора)
         public override bool CanSeek
         {
 
@@ -88,6 +97,7 @@ namespace PuzzlesProj
 
         /// <returns><c>true</c> if the stream supports writing; otherwise, <c>false</c>.</returns>
 
+        //чи може даний потік щось записувати
         public override bool CanWrite
         {
 
@@ -120,7 +130,7 @@ namespace PuzzlesProj
 
         public override long Position
         {
-
+            //встановлюється і повертається позиція курсора
             get { ThrowIfDisposed(); return m_streamBase.Position; }
 
             set { ThrowIfDisposed(); m_streamBase.Position = value; }
@@ -135,6 +145,7 @@ namespace PuzzlesProj
 
         /// </summary>
 
+        //метод для початку зчитування
         public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
 
@@ -369,7 +380,7 @@ namespace PuzzlesProj
         }
 
 
-
+        //якщо даний потік вивільнений, то кидається простий ексепшн
         private void ThrowIfDisposed()
         {
 
@@ -383,6 +394,6 @@ namespace PuzzlesProj
 
 
 
-        Stream m_streamBase;
+        Stream m_streamBase;//поле, яке тримає огорнутий потік
     }
 }

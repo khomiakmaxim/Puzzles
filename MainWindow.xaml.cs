@@ -15,6 +15,7 @@ using PuzzlesProj.Properties;
 using static System.Net.Mime.MediaTypeNames;
 using static PuzzlesProj.Piece;
 
+//логіка основної форми
 namespace PuzzlesProj
 {
     /// <summary>
@@ -23,26 +24,28 @@ namespace PuzzlesProj
     public partial class MainWindow : Window
     {        
         #region attributes
+        //даний вибір - список всіх кусочків
         List<Piece> currentSelection = new List<Piece>();
-        int selectionAngle = 0;
-        List<Piece> pieces = new List<Piece>();
-        List<Piece> shadowPieces = new List<Piece>();
-        int columns = 5;
-        int rows = 4;
-        double scale = 1.0;
-        BitmapImage imageSource;
-        string srcFileName = "";        
-        DropShadowBitmapEffect shadowEffect;
-        Point lastCell = new Point(-1, 0);
-        ScaleTransform stZoomed = new ScaleTransform
+        int selectionAngle = 0;//початковий кут повороту - 0
+        List<Piece> pieces = new List<Piece>();//ще якийсь масив шматків
+        List<Piece> shadowPieces = new List<Piece>();//масив тіней шматків
+        int columns = 5;//кількість колонок
+        int rows = 4;//кількість рядків
+        double scale = 1.0;//масштабування
+        BitmapImage imageSource;//забезпечує працю з рисунком збереженим в форматі btimap
+        string srcFileName = "";//назва файлу  
+        DropShadowBitmapEffect shadowEffect;//оцей ефект, який надає можливість працювати з тінню
+        Point lastCell = new Point(-1, 0);//об'єкт який репрезентує точку з координатами (-1, 0) найвища зліва
+        ScaleTransform stZoomed = new ScaleTransform//трансформація яка відповідає з вибір пазла
         {   ScaleX = 1.1,
             ScaleY = 1.1 
         };
+        
 
         ViewMode currentViewMode = ViewMode.Puzzle;
-        PngBitmapEncoder png;
-        double offsetX = -1;
-        double offsetY = -1;
+        PngBitmapEncoder png;//переганяє png в bitmap
+        double offsetX = -1;//зсув по х
+        double offsetY = -1;//зсув по y
         double lastMouseDownX = -1;
         double lastMouseDownY = -1;
         bool moving = false;
@@ -58,6 +61,7 @@ namespace PuzzlesProj
 
             //destFileName = Settings.Default.
 
+            //навішуємо обробники на різні події, які застосовуємо до пазлика
             cnvPuzzle.MouseLeftButtonUp += new MouseButtonEventHandler(cnvPuzzle_MouseLeftButtonUp);
             cnvPuzzle.MouseDown += new MouseButtonEventHandler(cnvPuzzle_MouseDown);
             cnvPuzzle.MouseMove += new MouseEventHandler(cnvPuzzle_MouseMove);
@@ -65,11 +69,12 @@ namespace PuzzlesProj
             cnvPuzzle.MouseEnter += new MouseEventHandler(cnvPuzzle_MouseEnter);
             cnvPuzzle.MouseLeave += new MouseEventHandler(cnvPuzzle_MouseLeave);
 
+            //shadowEffect для тіні пазликів
             shadowEffect = new DropShadowBitmapEffect()
             {
-                Color = Colors.Black,
-                Direction = 320,
-                ShadowDepth = 25,
+                Color = Colors.Black,//чорна тінь
+                Direction = 320,//встановлює кут, на який тінь кастується
+                ShadowDepth = 25,//встановлює відстань між пазликом і його тінню
                 Softness = 1,
                 Opacity = 0.5
             };
@@ -79,47 +84,52 @@ namespace PuzzlesProj
 
         #region methods
 
+        //метод який відповідає за створення пазлика з якогось файлу
         private void CreatePuzzle(Stream streamSource)
         {
-            Random rnd = new Random();
+            Random rnd = new Random();//будемо щось рандомити
+            //масив стиків
             var connections = new int[] { (int)ConnectionType.Tab, (int)ConnectionType.Blank };
-
+            
             png = null;
 
             imageSource = null;
             //var url = new Uri(destFileName);
 
-            //we do this to awoid memory leaks
+            //зчитуємо файл
+            //конструкція using забезпечує те, що потік потім буде діспознутим
             using (WrappingStream wrapper = new WrappingStream(streamSource))
             using (BinaryReader reader = new BinaryReader(wrapper))
             {
                 imageSource = new BitmapImage();
-                imageSource.BeginInit();
-                imageSource.CacheOption = BitmapCacheOption.OnLoad;
+                imageSource.BeginInit();//сигналізує про старт ініціалізації зчитування binaryReader'ом
+                imageSource.CacheOption = BitmapCacheOption.OnLoad;//caches the entire image into memory at load time
                 imageSource.StreamSource = reader.BaseStream;//streamSource
-                imageSource.EndInit();
-                imageSource.Freeze();
+                imageSource.EndInit();//завершує ініціалізацію даного потоку
+                imageSource.Freeze();//встановлює даний об'єкт незмінним
             }
 
-            imgShowImage.Source = imageSource;
+            imgShowImage.Source = imageSource;//повне зображення буде відповідним
 
-            scvImage.Visibility = Visibility.Hidden;
-            cnvPuzzle.Visibility = Visibility.Visible;
+            scvImage.Visibility = Visibility.Hidden;//зарашнє відображення складеного пазла буде схованим
+            cnvPuzzle.Visibility = Visibility.Visible;//повна картинка буде показаною
 
-            var angles = new int[] { 0, 90, 180, 270 };
+            var angles = new int[] { 0, 90, 180, 270 };//масив всіх можливих кутів повороту
 
-            int index = 0;
-            for (var y = 0; y < rows; ++y)
+            int index = 0;//розбиваємо картинку на індексовані частини
+            for (var y = 0; y < rows; ++y)//по рядках і по стовпцях
             {
                 for (var x = 0; x < columns; ++x)
                 {
-                    if (x != 1000)
+                    if (x != 1000)//???
                     {
                         int upperConnection = (int)ConnectionType.None;
                         int rightConnection = (int)ConnectionType.None;
                         int bottomConnection = (int)ConnectionType.None;
                         int leftConnection = (int)ConnectionType.None;
 
+
+                        //якщо дані пазли кутові, то залишаємо певні їхні частини квадратними
                         if (y != 0)
                             upperConnection = -1 * pieces[(y - 1) * columns + x].BottomConnection;
 
@@ -134,29 +144,34 @@ namespace PuzzlesProj
 
                         int angle = 0;
 
-                        var piece = new Piece(imageSource, x, y, 0.1, 0.1, (int)upperConnection, (int)rightConnection, (int)bottomConnection, (int)leftConnection, false, index, scale);
-                        piece.SetValue(Canvas.ZIndexProperty, 1000 + x * rows + y);
+                        var piece = new Piece(imageSource, x, y, 0.1, 0.1, upperConnection, rightConnection, bottomConnection, leftConnection, false, index, scale);
+                        piece.SetValue(Canvas.ZIndexProperty, 1000 + x * rows + y);//для чогось вираховуєтсья значення по осі z
+                        //додаємо пару хендлерів
                         piece.MouseLeftButtonUp += new MouseButtonEventHandler(piece_MouseLeftButtonUp);
                         piece.MouseRightButtonUp += new MouseButtonEventHandler(piece_MouseRightButtonUp);
+                        //повертаємо на відповідний кут даний пазл
                         piece.Rotate(piece, angle);
 
-                        var shadowPiece = new Piece(imageSource, x, y, 0.1, 0.1, (int)upperConnection, (int)rightConnection, (int)bottomConnection, (int)leftConnection, false, index, scale);
-                        shadowPiece.SetValue(Canvas.ZIndexProperty, x * rows + y);
-                        shadowPiece.Rotate(piece, angle);
+                        //створюємо відповідний тіневий пазлик
+                        var shadowPiece = new Piece(imageSource, x, y, 0.1, 0.1, upperConnection, rightConnection, bottomConnection, leftConnection, false, index, scale);
+                        shadowPiece.SetValue(Canvas.ZIndexProperty, x * rows + y);//його z значення буде на 1000 менше за відповідне значення нормального пазлика
+                        shadowPiece.Rotate(piece, angle);//повертаємо тіневий пазлик на той самй кут, що і основний
 
-                        pieces.Add(piece);
-                        shadowPieces.Add(shadowPiece);
-                        index++;
+                        pieces.Add(piece);//додаємо до кусочків
+                        shadowPieces.Add(shadowPiece);//додаємо до тіневих кусочків
+                        index++;//збільшуємо індекс(індексуємо по розумному)
                     }
                 }
             }
 
+            //якась трансформація зсуву
             var tt = new TranslateTransform() { X = 20, Y = 20 };
 
+            //для всіх видимих пазликів(заповнюємо їх на панелі вибору)
             foreach (var p in pieces)
             {
                 Random random = new Random();
-                int i = random.Next(0, pnlPickUp.Children.Count);
+                int i = random.Next(0, pnlPickUp.Children.Count);//рандомимо індекс відображення на панелі вибору
 
                 p.ScaleTransform.ScaleX = 1.0;
                 p.ScaleTransform.ScaleY = 1.0;
@@ -165,19 +180,20 @@ namespace PuzzlesProj
                 p.Y = -1;
                 p.IsSelected = false;
 
-                pnlPickUp.Children.Insert(i, p);
+                pnlPickUp.Children.Insert(i, p);//втикаємо пазлик на відовідну позицію на wrapPanel вибору
 
-                double angle = angles[rnd.Next(0, 4)];
-                p.Rotate(p, angle);
-                shadowPieces[p.Index].Rotate(p, angle);
+                double angle = angles[rnd.Next(0, 4)];//рандомимо кут повороту
+                p.Rotate(p, angle);//повертаємо на зрандомлений кут
+                shadowPieces[p.Index].Rotate(p, angle);//той самий тіневий пазлик повертаємо на той же кут
             }
 
-            rectSelection.SetValue(Canvas.ZIndexProperty, 5000);
-
+            //rectSelection відповідає за вибір кількох пазликів одночасно
+            rectSelection.SetValue(Canvas.ZIndexProperty, 5000);//є підозра, що це вибрана купка пазликів
             rectSelection.StrokeDashArray = new DoubleCollection(new double[] { 4, 4, 4, 4 });
             cnvPuzzle.Children.Add(rectSelection);
         }
 
+        //зберігаємо пазлик в якомусь файлі
         private void SavePuzzle()
         {
             var sfd = new SaveFileDialog
@@ -194,39 +210,44 @@ namespace PuzzlesProj
             sfd.DefaultExt = "png";
             sfd.ShowDialog();
 
+            //всі наші пазлики
             var query = from p in pieces
                         select p;
 
-
+            //знаходимо границі по всіх краях
             var minX = query.Min<Piece>(x => x.X);
             var maxX = query.Max<Piece>(x => x.X);
             var minY = query.Min<Piece>(x => x.Y);
             var maxY = query.Max<Piece>(x => x.Y);
 
+            //Перетворює об'єкт Visual в растрове зображення.
             var rtb = new RenderTargetBitmap((int)(maxX - minX + 1) * 100 + 40,
                (int)(maxY - minY + 1) * 100 + 40, 100, 100, PixelFormats.Pbgra32);
             cnvPuzzle.Arrange(new Rect(-minX * 100, -minY * 100,
                 (int)(maxX - minX + 1) * 100 + 40, (int)(maxY - minY + 1) * 100 + 40));
-            rtb.Render(cnvPuzzle);
+            rtb.Render(cnvPuzzle);//рендеримо цілий пазл для того, щоб нормально зберегти
 
-            png = new PngBitmapEncoder();
+            png = new PngBitmapEncoder();//будемо зберігати в форматі png
             png.Frames.Add(BitmapFrame.Create(rtb));
 
+            //зберігаємо пазлик в файловій системі
             using (StreamWriter sw = new StreamWriter(sfd.FileName))
             {
                 png.Save(sw.BaseStream);
             }
         }
 
+        //це напевне для чогось потрібно
         private void DestroyReferences()
         {
             for (var i = cnvPuzzle.Children.Count - 1; i >= 0; i--)
             {
+                //для всіх дітей cnvPuzzle знищуємо прив'язки до хендлерів(хз нащо це)
                 if (cnvPuzzle.Children[i] is Piece)
                 {
                     Piece p = (Piece)cnvPuzzle.Children[i];
                     p.MouseLeftButtonUp -= new MouseButtonEventHandler(piece_MouseLeftButtonUp);
-                    p.ClearImage();
+                    p.ClearImage();//заодно чистимо пазлик
                     cnvPuzzle.Children.Remove(p);
                 }
             }
@@ -260,10 +281,11 @@ namespace PuzzlesProj
             imageSource = null;
         }
 
+        //завантажуємо файл з назвою srcFileName з системи
         private Stream LoadImage(string srcFileName)
         {
             imageSource = new BitmapImage(new Uri(srcFileName));
-            columns = (int)Math.Ceiling(imageSource.PixelWidth / 100.0);
+            columns = (int)Math.Ceiling(imageSource.PixelWidth / 100.0);//оці речі мають бути довільними
             rows = (int)Math.Ceiling(imageSource.PixelHeight / 100.0);
 
             var bi = new BitmapImage(new Uri(srcFileName));

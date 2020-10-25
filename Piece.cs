@@ -15,15 +15,15 @@ namespace PuzzlesProj
     {
         #region attributes
         Path path;//малює ряд з'єднаних ліній і кривих
-        Path shadowPath;
+        Path shadowPath;//тінь пазла
         string imageUri;//розташування зображення в системі
         double initialX;//початкові координати
         double initialY;
-        double x;
+        double x;//координати відповідно до положення на сітці
         double y;
         double xPercent;
         double yPercent;
-        int upperConnection;//вит пазла, який згори
+        int upperConnection;//вид пазла, який згори
         int rightConnection;//справа
         int bottomConnection;//знизу
         int leftConnection;//зліва
@@ -73,7 +73,7 @@ namespace PuzzlesProj
             this.InitialY = y;
             this.X = x;
             this.Y = y;
-            this.XPercent = xPercent;//this may be obsolete
+            this.XPercent = xPercent;
             this.YPercent = yPercent;
 
             initialUpperConnection =
@@ -112,15 +112,15 @@ namespace PuzzlesProj
             {
                 ImageSource = imageSource,//uri картинки
                 Stretch = Stretch.None,//контент зберігає свій початковий стан
-                Viewport = new Rect(-20, -20, 140, 140),//пазл знаходитметься на просторі розміром 160
+                Viewport = new Rect(-20, -20, 140, 140),//пазл знаходитметься на просторі розміром 140
                 ViewportUnits = BrushMappingMode.Absolute,
                 Viewbox = new Rect(
                     x * 100 - 10,//вирізка зображення для відповідного х і y
                     y * 100 - 10,
                     120,//зображення буде 120x120
                     120),
-                ViewboxUnits = BrushMappingMode.Absolute,
-                Transform = imageScaleTransform
+                ViewboxUnits = BrushMappingMode.Absolute,//задається абсолютне позиціонування
+                Transform = imageScaleTransform//трансофрамація, яка застосовна до даного пазлика(просте масштабування)
             };
                        
 
@@ -147,8 +147,7 @@ namespace PuzzlesProj
             Random rnd = new Random(DateTime.Now.Millisecond);
 
             //якісь таймспани
-            TimeSpan beginTime = new TimeSpan(0,0,0,0,rnd.Next(50, 200) * (int)(x + y));
-            TimeSpan duration = new TimeSpan(0,0,0,0,rnd.Next(50, 200) * (int)(x + y));
+            
 
             //в першу transform групу додаємо transform translate i rotation translate
             tg1.Children.Add(tt1);
@@ -156,7 +155,7 @@ namespace PuzzlesProj
 
             path.RenderTransform = tg1;
 
-            tt2 = new TranslateTransform()//переміщення тіні
+            tt2 = new TranslateTransform()//переміщення тіні(тінь так ніби падає з лівого верхнього високого кута)
             {
                 X = 1,
                 Y = 1
@@ -165,7 +164,7 @@ namespace PuzzlesProj
             tg2.Children.Add(tt2);
             tg2.Children.Add(rt);
 
-            shadowPath.RenderTransform = tg2;
+            shadowPath.RenderTransform = tg2;//render transform застосовується після компоновки, а layout transform - до компоновки
 
             var tt3 = new TranslateTransform
             { 
@@ -180,16 +179,16 @@ namespace PuzzlesProj
                 ScaleY = 0.95
             };
 
-            var tg = new TransformGroup();//цей трансформ відповідає за вибір пазла і його переміщення по всьому
+            //var tg = new TransformGroup();//цей трансформ відповідає за вибір пазла і його переміщення по всьому
 
-            tg.Children.Add(st);
-            tg.Children.Add(tt3);
+            //tg.Children.Add(st);
+            //tg.Children.Add(tt3);
 
             //розмір пазла масштабується
             this.Width = 140 * scale;
             this.Height = 140 * scale;
 
-            //якщо даний пазл - тінь
+            //якщо даний пазл - тінь(при роботі з пазлом генерується насправді два пазли тіневий і справжній)
             if (isShadow)
                 this.Children.Add(shadowPath);
             else
@@ -202,26 +201,27 @@ namespace PuzzlesProj
 
         #region methods        
 
+        //оці конекшени - їх використовували для відмальовки кривих без'є
         public int UpperConnection
         {
             get
             {
                 var connection = 0;
 
-                int a = (int)angle;
+                int a = (int)angle;//в залежності від кута, на який саме зараз поверенеий пазлик
                 switch (a)
                 {
                     case 0:
-                        connection = initialUpperConnection;
+                        connection = initialUpperConnection;//розумно
                         break;
                     case 90:
-                        connection = initialLeftConnection;
+                        connection = initialLeftConnection;//розумно
                         break;
                     case 180:
-                        connection = initialBottomConnection;
+                        connection = initialBottomConnection;//розумно
                         break;
                     case 270:
-                        connection = initialRightConnection;
+                        connection = initialRightConnection;//розумно
                         break;
                 }
                 return connection;
@@ -301,45 +301,48 @@ namespace PuzzlesProj
                 }
                 return connection;
             }
-
         }
 
-        public void Rotate(Piece axisPiece, double rotationAngle)
+        //оці connection'u дають відповідний вигляд з'єднань даного пазлика
+
+        public void Rotate(Piece axisPiece, double rotationAngle)//даний метод відповідає за поворот пазлика
         {
-            var deltaCellX = this.X - axisPiece.X;
+            //axisPiece - осьовий пазл, відносно якого обертаються усі інші в групці
+            var deltaCellX = this.X - axisPiece.X;//різниці по координатах
             var deltaCellY = this.Y - axisPiece.Y;
 
-            double rotatedCellX = 0;
+            double rotatedCellX = 0;//координати вже поверненого пазла
             double rotatedCellY = 0;
 
             int a = (int)rotationAngle;
-            switch (a)
+            switch (a)//в залежності від того, на який кут повернений пазл
             {
-                case 0:
+                case 0://якщо взгалаі не повернутий
                     rotatedCellX = deltaCellX;
                     rotatedCellY = deltaCellY;
                     break;
-                case 90:
+                case 90://якщо повернутий разок вправо
                     rotatedCellX = -deltaCellY;
                     rotatedCellY = deltaCellX;
                     break;
-                case 180:
+                case 180://розумно
                     rotatedCellX = -deltaCellX;
                     rotatedCellY = -deltaCellY;
                     break;
-                case 270:
+                case 270://розумно
                     rotatedCellX = deltaCellY;
                     rotatedCellY = -deltaCellX;
                     break;
             }
 
+            //змінюємо позицію пазла
             this.X = axisPiece.X + rotatedCellX;
             this.Y = axisPiece.Y + rotatedCellY;
 
             var rt1 = (RotateTransform)tg1.Children[1];
             var rt2 = (RotateTransform)tg2.Children[1];
 
-            angle += rotationAngle;
+            angle += rotationAngle;//кут нового повороту 
 
             if (angle == -90)
                 angle = 270;
@@ -350,10 +353,12 @@ namespace PuzzlesProj
             rt1.Angle =
             rt2.Angle = angle;
 
-            this.SetValue(Canvas.LeftProperty, this.X * 100);
+            //встановлюємо те, де буде відмальовуватися на холсті(напевне загальному) наш новий пазлик
+            this.SetValue(Canvas.LeftProperty, this.X * 100);//100x100 - розмір нашого пазлика
             this.SetValue(Canvas.TopProperty, this.Y * 100);
         }
 
+        //стираємо пазлик повністю
         public void ClearImage()
         {
             path.Fill = null;
