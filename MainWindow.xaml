@@ -63,7 +63,7 @@
                         <TextBlock Grid.Row="1" FontSize="12" Text="New Puzzle"/>
                     </Grid>
                 </Button>
-                <Button Name="btnShowImage" Width="100" HorizontalAlignment="Center" Margin="10" Click="btnLoad_Click" IsDefault="false">
+                <Button Name="btnShowImage" Width="100" HorizontalAlignment="Center" Margin="10" Click="btnShowImage_Click" IsDefault="false">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="60"/>
@@ -97,7 +97,7 @@
                 </StackPanel>
             </StackPanel>
             <!--Площина, на якій збирається пазл-->
-                <Grid Name="grdPuzzle" Grid.Row="1" Grid.Column="1" MouseEnter="grdPuzzle_MouseEnter">
+            <Grid Name="grdPuzzle" Grid.Row="1" Grid.Column="1" MouseEnter="DockPanel_MouseEnter">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="10"/>
