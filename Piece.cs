@@ -5,26 +5,24 @@ using System.Windows.Media;
 using System.Windows;
 
 namespace PuzzlesProj
-{
-    //клас, який відповідає за відмалювання одного пазлика
-    public class Piece : Grid//наслідується від Grid
+{    
+    public class Piece : Grid
     {
         #region attributes
-        Path path;//малює ряд з'єднаних ліній і кривих
+        Path path;
         Path shadowPath;//тінь пазла
-        string imageUri;//розташування зображення в системі
+        string imageUri;
         double initialX;//початкові координати
-        double initialY;//швидше за все відносні(в пазлах)
+        double initialY;
         double x;//координати відповідно до положення на сітці
         double y;        
 
         double angle = 0;//кут повороту в градусах        
         
-        int index = 0;//індекс даного пазлу
-        TranslateTransform tt1;//даний об'єкт рухає об'єкт в двовимірній координатній системі
+        int index = 0;//індекс даного пазлу(зліва направо, зверху вниз)
+        TranslateTransform tt1;
         TranslateTransform tt2;
-
-        //TransformGroup tgPiece = new TransformGroup();//група трансформацій
+        
         TransformGroup tg1 = new TransformGroup();
         TransformGroup tg2 = new TransformGroup();
 
@@ -39,14 +37,16 @@ namespace PuzzlesProj
         public double InitialY { get { return initialY; } set { initialY = value; } }        
         public double Angle { get { return angle; } set { angle = value; } }
         public int Index { get{return index; } set { index = value; } }
-        public bool IsSelected { get; set; }//чи даний пазл зараз вибраний
-        public ScaleTransform ScaleTransform{ get; set; }//масштабує об'єкт в двовимірному просторі
+        public bool IsSelected { get; set; }
+        public ScaleTransform ScaleTransform{ get; set; }
         #endregion
 
-        #region constructor
-        //конструктор приймає джерело зображення, початкові координати, вид пазлів, які мають бути по боках, чи даний пазл є тіневим,
-        //індекс і масштаб
-        //imageSource - абстрактний клас
+        #region constructor   
+        public Piece()
+        { 
+            
+        }
+
         public Piece(ImageSource imageSource, double x, double y, bool isShadow, int index, double scale)
         {
             this.ImageUri = imageUri;
@@ -54,21 +54,16 @@ namespace PuzzlesProj
             this.InitialY = y;
             this.X = x;
             this.Y = y;            
-
-            //below code is obsolete            
-
-            //масштабування пазлу на початку відсутнє
             this.Index = index;
-            this.ScaleTransform = new ScaleTransform() { ScaleX = 1.0, ScaleY = 1.0 };//на початку ніщо не масштабовано
 
-            //встановлюємо об'єкт, яким будемо щось малювати
+            this.ScaleTransform = new ScaleTransform() { ScaleX = 1.0, ScaleY = 1.0 };
+            
             path = new Path
             {
-                Stroke = new SolidColorBrush(Colors.Gray),//колір обгортки буде сірим
-                StrokeThickness = 0//але без товщини
+                Stroke = new SolidColorBrush(Colors.Gray),
+                StrokeThickness = 0
             };
-
-            //відмальовка тіні
+            
             shadowPath = new Path
             {
                 Stroke = new SolidColorBrush(Colors.Black),
@@ -76,23 +71,21 @@ namespace PuzzlesProj
             };          
 
             var imageScaleTransform = ScaleTransform;
-
-            //малюється щось
-            path.Fill = new ImageBrush//замальовувати буде частинами оригінального зображення
+            
+            path.Fill = new ImageBrush//пазл замальовуватиметься частинами оригінльного зображення
             {
                 ImageSource = imageSource,//uri картинки
-                Stretch = Stretch.None,//контент зберігає свій початковий розмір
-                //отут важливий момент(чомусь всі відмальовки пазликів зсуваються на 20 вгору і вліво)
+                Stretch = Stretch.None,//контент зберігає свій початковий розмір                
                 //viewport встановлює координати відрисування viewbox'a 
-                Viewport = new Rect(-20, -20, 140, 140),//пазл знаходитметься на просторі розміром 140, але -20 = 120x120
-                ViewportUnits = BrushMappingMode.Absolute,
+                Viewport = new Rect(-20, -20, 140, 140),
+                ViewportUnits = BrushMappingMode.Absolute,//використовуються одиниці відносно лівого верхнього кута самого пазла
                 Viewbox = new Rect(//в залежності від того, що за пазл вирізається, ми даємо йому вигляд замальовки
-                    x * 100 - 10,//вирізка зображення для відповідного х і y оце теж якось трохи дивно
+                    x * 100 - 10,
                     y * 100 - 10,
-                    120,//зображення буде 120x120(але крайні матимуть розмір 110х110)
+                    120,
                     120),
-                ViewboxUnits = BrushMappingMode.Absolute,//задається абсолютне позиціонування
-                Transform = imageScaleTransform//трансофрамація, яка застосовна до даного пазлика(просте масштабування)
+                ViewboxUnits = BrushMappingMode.Absolute,
+                Transform = imageScaleTransform
             };
                        
 
@@ -105,7 +98,7 @@ namespace PuzzlesProj
 
             var rt = new RotateTransform
             { 
-                CenterX = 50,
+                CenterX = 50,//все повертається відносно центру пазла
                 CenterY = 50,
                 Angle = 0
             };
@@ -114,9 +107,7 @@ namespace PuzzlesProj
             { 
                 X = 0,
                 Y = 0
-            };
-
-            Random rnd = new Random(DateTime.Now.Millisecond);                        
+            };                                  
 
             //в першу transform групу додаємо transform translate i rotation translate
             tg1.Children.Add(tt1);
@@ -124,7 +115,7 @@ namespace PuzzlesProj
 
             path.RenderTransform = tg1;
 
-            tt2 = new TranslateTransform()//переміщення тіні(тінь так ніби падає з лівого верхнього високого кута)
+            tt2 = new TranslateTransform()
             {
                 X = 1,
                 Y = 1
@@ -133,63 +124,25 @@ namespace PuzzlesProj
             tg2.Children.Add(tt2);
             tg2.Children.Add(rt);
 
-            shadowPath.RenderTransform = tg2;//render transform застосовується після компоновки, а layout transform - до компоновки
+            shadowPath.RenderTransform = tg2;
 
                                 
-
-            //розмір пазла масштабується
-            this.Width = 140 * scale;//(насправді кожен пазлик розміру 140x140)
+            this.Width = 140 * scale;
             this.Height = 140 * scale;
-
-            //якщо даний пазл - тінь(при роботі з пазлом генерується насправді два пазли тіневий і справжній)
+            
             if (isShadow)
                 this.Children.Add(shadowPath);
             else
-                this.Children.Add(path);
-
-            
-
+                this.Children.Add(path);            
         }
         #endregion
 
         #region methods               
 
-        public void Rotate(Piece axisPiece, double rotationAngle)//даний метод відповідає за поворот пазлика
-        {
-            //axisPiece - осьовий пазл, відносно якого обертаються усі інші в групці
-            var deltaCellX = this.X - axisPiece.X;//різниці по координатах
-            var deltaCellY = this.Y - axisPiece.Y;
-
-            double rotatedCellX = 0;//координати вже поверненого пазла
-            double rotatedCellY = 0;
-
-            int a = (int)rotationAngle;
-            switch (a)//в залежності від того, на який кут повернений пазл
-            {
-                case 0://якщо взгалаі не повернутий
-                    rotatedCellX = deltaCellX;
-                    rotatedCellY = deltaCellY;
-                    break;
-                case 90://якщо повернутий разок вправо
-                    rotatedCellX = -deltaCellY;
-                    rotatedCellY = deltaCellX;
-                    break;
-                case 180://розумно
-                    rotatedCellX = -deltaCellX;
-                    rotatedCellY = -deltaCellY;
-                    break;
-                case 270://розумно
-                    rotatedCellX = deltaCellY;
-                    rotatedCellY = -deltaCellX;
-                    break;
-            }
-
-            //змінюємо позицію пазла
-            this.X = axisPiece.X + rotatedCellX;
-            this.Y = axisPiece.Y + rotatedCellY;
-
+        public void Rotate(double rotationAngle)
+        {                                                                    
             var rt1 = (RotateTransform)tg1.Children[1];
-            var rt2 = (RotateTransform)tg2.Children[1];
+            var rt2 = (RotateTransform)tg2.Children[1];//тінь теж повертаєтья на цей кут
 
             angle += rotationAngle;//кут нового повороту 
 
@@ -200,14 +153,13 @@ namespace PuzzlesProj
                 angle = 0;
 
             rt1.Angle =
-            rt2.Angle = angle;
+            rt2.Angle = angle;//власне сама трансформація
 
-            //встановлюємо те, де буде відмальовуватися на холсті(напевне загальному) наш новий пазлик
-            this.SetValue(Canvas.LeftProperty, this.X * 100);//100x100 - розмір нашого пазлика
+            //встановлюємо те, де буде відмальовуватися на полотні даний пазл
+            this.SetValue(Canvas.LeftProperty, this.X * 100);//100x100 - розмір пазла
             this.SetValue(Canvas.TopProperty, this.Y * 100);
         }
-
-        //стираємо пазлик повністю
+        
         public void ClearImage()
         {
             path.Fill = null;
