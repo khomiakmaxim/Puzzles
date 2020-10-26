@@ -9,10 +9,8 @@ using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using PuzzlesProj;
+
 using Microsoft.Win32;
-using PuzzlesProj.Properties;
-using static System.Net.Mime.MediaTypeNames;
 using static PuzzlesProj.Piece;
 
 //логіка основної форми
@@ -36,16 +34,14 @@ namespace PuzzlesProj
         string srcFileName = "";//назва файлу  
         DropShadowBitmapEffect shadowEffect;//оцей ефект, який надає можливість працювати з тінню
         Point lastCell = new Point(-1, 0);//об'єкт який репрезентує точку з координатами (-1, 0) найвища зліва
-        ScaleTransform stZoomed = new ScaleTransform//трансформація яка відповідає з вибір пазла
+        ScaleTransform stZoomed = new ScaleTransform//трансформація яка відповідає за вибір пазла
         {   ScaleX = 1.1,
             ScaleY = 1.1 
         };
         
 
         ViewMode currentViewMode = ViewMode.Puzzle;
-        PngBitmapEncoder png;//переганяє png в bitmap
-        double offsetX = -1;//зсув по х
-        double offsetY = -1;//зсув по y
+        PngBitmapEncoder png;//переганяє png в bitmap        
         double lastMouseDownX = -1;
         double lastMouseDownY = -1;
         bool moving = false;
@@ -87,14 +83,10 @@ namespace PuzzlesProj
         //метод який відповідає за створення пазлика з якогось файлу
         private void CreatePuzzle(Stream streamSource)
         {
-            Random rnd = new Random();//будемо щось рандомити
-            //масив стиків
-            var connections = new int[] { (int)ConnectionType.Tab, (int)ConnectionType.Blank };
-            
+            Random rnd = new Random();//будемо щось рандомити                                    
             png = null;
 
-            imageSource = null;
-            //var url = new Uri(destFileName);
+            imageSource = null;            
 
             //зчитуємо файл
             //конструкція using забезпечує те, що потік потім буде діспознутим
@@ -120,31 +112,10 @@ namespace PuzzlesProj
             for (var y = 0; y < rows; ++y)//по рядках і по стовпцях
             {
                 for (var x = 0; x < columns; ++x)
-                {
-                    if (x != 1000)//???
-                    {
-                        int upperConnection = (int)ConnectionType.None;
-                        int rightConnection = (int)ConnectionType.None;
-                        int bottomConnection = (int)ConnectionType.None;
-                        int leftConnection = (int)ConnectionType.None;
-
-
-                        //якщо дані пазли кутові, то залишаємо певні їхні частини квадратними
-                        if (y != 0)
-                            upperConnection = -1 * pieces[(y - 1) * columns + x].BottomConnection;
-
-                        if (x != columns - 1)
-                            rightConnection = connections[rnd.Next(2)];
-
-                        if (y != rows - 1)
-                            bottomConnection = connections[rnd.Next(2)];
-
-                        if (x != 0)
-                            leftConnection = -1 * pieces[y * columns + x - 1].RightConnection;
-
+                {                                       
                         int angle = 0;
 
-                        var piece = new Piece(imageSource, x, y, 0.1, 0.1, upperConnection, rightConnection, bottomConnection, leftConnection, false, index, scale);
+                        var piece = new Piece(imageSource, x, y, false, index, scale);
                         piece.SetValue(Canvas.ZIndexProperty, 1000 + x * rows + y);//для чогось вираховуєтсья значення по осі z
                         //додаємо пару хендлерів
                         piece.MouseLeftButtonUp += new MouseButtonEventHandler(piece_MouseLeftButtonUp);
@@ -153,14 +124,13 @@ namespace PuzzlesProj
                         piece.Rotate(piece, angle);
 
                         //створюємо відповідний тіневий пазлик
-                        var shadowPiece = new Piece(imageSource, x, y, 0.1, 0.1, upperConnection, rightConnection, bottomConnection, leftConnection, false, index, scale);
+                        var shadowPiece = new Piece(imageSource, x, y, false, index, scale);
                         shadowPiece.SetValue(Canvas.ZIndexProperty, x * rows + y);//його z значення буде на 1000 менше за відповідне значення нормального пазлика
                         shadowPiece.Rotate(piece, angle);//повертаємо тіневий пазлик на той самй кут, що і основний
 
                         pieces.Add(piece);//додаємо до кусочків
                         shadowPieces.Add(shadowPiece);//додаємо до тіневих кусочків
-                        index++;//збільшуємо індекс(індексуємо по розумному)
-                    }
+                        index++;//збільшуємо індекс(індексуємо по розумному)                    
                 }
             }
 
@@ -253,7 +223,7 @@ namespace PuzzlesProj
             }
 
             cnvPuzzle.Children.Clear();
-            SetSelectionRectangle(-1, -1, -1, -1);
+            SetSelectionRectangle(-1, -1, -1, -1);//перестаємо малювати
 
             for (var i = pnlPickUp.Children.Count - 1; i >= 0; i--)
             {
@@ -341,7 +311,7 @@ namespace PuzzlesProj
         }
 
 
-        //не завжди працює
+        //працює завжди
         private bool IsPuzzleCompleted()
         {
             //All pieces must have rotation of 0 degrees
@@ -353,7 +323,8 @@ namespace PuzzlesProj
             if (query.Any())
                 return false;
 
-            //All pieces must be connected horizontally
+            //All pieces must be connected horizontally                 
+
             query = from p1 in pieces
                     join p2 in pieces on p1.Index equals p2.Index - 1
                     where (p1.Index % columns < columns - 1) && (p1.X + 1 != p2.X)
@@ -367,7 +338,7 @@ namespace PuzzlesProj
             //All pieces must be connected vertically
             query = from p1 in pieces
                     join p2 in pieces on p1.Index equals p2.Index - columns
-                    where (p1.Y + 1 != p2.Y)
+                    where (p1.Y + 1 != p2.Y) || (p1.X != p2.X)
                     select p1;
 
             if (query.Any())
@@ -376,9 +347,7 @@ namespace PuzzlesProj
             return true;
             //ну цей метод чоткий і він буде працювати в переробленому вигляді теж
         }
-
-
-        //не дуже розумію навіщо цей метод
+        
         private void ResetZIndexes()
         {
             int zIndex = 0;
@@ -394,9 +363,8 @@ namespace PuzzlesProj
             }
         }
 
-        //оцей метод повертає чи можна вставляти на певне місце на полотні 
-        //переробити під себе!!!!!!!!!!!!!!!!!!
-        private bool TrySetCurrentPiecePosition(double newX, double newY)
+        //оцей метод повертає чи можна вставляти на певне місце на полотні      
+        private bool TrySetCurrentPiecePosition(double newX, double newY)//newX, newY - координати на cnvPuzzle, куди вставлятиеться нова групка
         {
             bool ret = true;//по дефолту вставляти можна будь що
 
@@ -412,48 +380,22 @@ namespace PuzzlesProj
             //для кожного шматка в руці
             foreach (var currentPiece in currentSelection)
             {
-                //позиціонуємо відносно початкового шматочка в руці
+                //позиціонуємо відносно початкового шматочка в руці(потім він має залишитися один)
                 var relativeCellX = currentPiece.X - firstPiece.X;
                 var relativeCellY = currentPiece.Y - firstPiece.Y;
 
 
-
-                //double rotatedCellX = 0;
-                //double rotatedCellY = 0;
-                //rotatedCellX = relativeCellX;
-                //rotatedCellY = relativeCellY;
-
                 //якщо хоча б один підпадає під цю кверю, то не можна вставляти
                 var q = from p in pieces//фільтруємо шматки
-                        where (//чим більше тут критеріїв тим має бути краще
-                                //критерії відбору
-
+                        where (
                                 //відбираємо шматки, індекс яких не дорівнює індексу шматочка
-                                (p.Index != currentPiece.Index) &&
-                                (!p.IsSelected) &&//також в вибірку будуть входити лише ті, які не вибрані(мгм мгм)
-
-                                //все працює з закоментованим нижнім елементом
-                                //місце, на якому має стояти елемент + відносне розташування має бути невід'ємним?
-                                (cellX + relativeCellX > 0) &&//не дуже зрозуміло навіщо це і це
-                                (cellY + relativeCellY > 0) &&//і це
-
-
-                                //з цього селекшену має виконуватися хоча б одна з наступних умов
-                                (
-                                ((p.X == cellX + relativeCellX) && (p.Y == cellY + relativeCellY))//позиція даного шматочка має дорівнювати позиції одного з вже відібраних пазликів
-                                || ((p.X == cellX + relativeCellX - 1) && (p.Y == cellY + relativeCellY) &&
-                                (p.RightConnection + currentPiece.LeftConnection != 0))
-                                || ((p.X == cellX + relativeCellX + 1) && (p.Y == cellY + relativeCellY) &&
-                                (p.LeftConnection + currentPiece.RightConnection != 0))
-                                || ((p.X == cellX + relativeCellX) && (p.Y == cellY - 1 + relativeCellY) &&
-                                (p.BottomConnection + currentPiece.UpperConnection != 0))
-                                || ((p.X == cellX + relativeCellX) && (p.Y == cellY + 1 + relativeCellY) &&
-                                (p.UpperConnection + currentPiece.BottomConnection != 0))
-                                )
+                                (p.Index != currentPiece.Index) &&//очевидно що їх перевіряти не дуже потрібно
+                                (!p.IsSelected) &&//також в вибірку будуть входити лише ті, які не вибрані(мгм мгм)                                
+                                ((p.X == cellX) && (p.Y == cellY))                                
                               )
                         select p;
 
-                if (q.Any())
+                if (q.Any())//якщо хоча б один шматок підпадає - сюди вставлти не можна
                 {
                     ret = false;
                     break;
@@ -466,7 +408,7 @@ namespace PuzzlesProj
         //маємо якийсь шматочок в currentSelection і його потрібно поставити на місце
         private Point SetCurrentPiecePosition(Piece currentPiece, double newX, double newY)
         {
-            double cellX = (int)((newX) / 100);//переводимо в інші одиниці
+            double cellX = (int)((newX) / 100);//переводимо в пазликові одиниці
             double cellY = (int)((newY) / 100);//
 
             var firstPiece = currentSelection[0];//перший шматочок(якраз той, що вставляємо)
@@ -474,44 +416,45 @@ namespace PuzzlesProj
             var relativeCellX = currentPiece.X - firstPiece.X;//відносно того, що в руці
             var relativeCellY = currentPiece.Y - firstPiece.Y;
 
-            double rotatedCellX = relativeCellX;
-            double rotatedCellY = relativeCellY;
+            currentPiece.X = cellX + relativeCellX;//переписуємо позиціонування пазлика
+            currentPiece.Y = cellY + relativeCellY;
 
-            currentPiece.X = cellX + rotatedCellX;
-            currentPiece.Y = cellY + rotatedCellY;
-
-            //встановлюємо його значення відносно полотна, на якому малюємо
+            //якраз таки ставимо пазлик на відповідну позицію
             currentPiece.SetValue(Canvas.LeftProperty, currentPiece.X * 100);
             currentPiece.SetValue(Canvas.TopProperty, currentPiece.Y * 100);
 
-            //що це тоді хз
+            //робимо це ж саме з тіневим елементом(він ставиться туди само)
             shadowPieces[currentPiece.Index].SetValue(Canvas.LeftProperty, currentPiece.X * 100);
             shadowPieces[currentPiece.Index].SetValue(Canvas.TopProperty, currentPiece.Y * 100);
 
-            return new Point(cellX, cellY);
+            return new Point(cellX, cellY);//повертаємо відповідн
         }
         
         //він відповідно непотрібний
         //оцей метод використовується для вибору пари елементів разом
-        private void SetSelectionRectangle(double x1, double y1, double x2, double y2)
+        //цей метод просто малює прямокутник
+        private void SetSelectionRectangle(double x1, double y1, double x2, double y2)//напевне координати цього йобаного прямокутника
         {
+            //встановлюємо ліву верхню точку прямокутника
             double x = (x2 >= x1) ? x1 : x2;
             double y = (y2 >= y1) ? y1 : y2;
-            double width = Math.Abs(x2 - x1);
-            double height = Math.Abs(y2 - y1);
-            rectSelection.Visibility = System.Windows.Visibility.Visible;
+            double width = Math.Abs(x2 - x1);//ширина
+            double height = Math.Abs(y2 - y1);//висота
+            rectSelection.Visibility = Visibility.Visible;//прямокутник буде видимим
             rectSelection.Width = width;
             rectSelection.Height = height;
             rectSelection.StrokeThickness = 4;
             rectSelection.Stroke = new SolidColorBrush(Colors.Red);
 
+            //вимальовуюємо прямокутник на полотні
             rectSelection.SetValue(Canvas.LeftProperty, x);
             rectSelection.SetValue(Canvas.TopProperty, y);
         }
         
         //оцей маус ап використовується разом з ласо, тому не треба паритися
         private void MouseUp()
-        {
+        {//але якщо чесно, то трошки треба, бо воно встановлює значення rectSelection, а він в свою чергу відповідає за те, які 
+            //клавіші будуть вибрані
             if (currentSelection.Count == 0)
             {
                 double x1 = (double)rectSelection.GetValue(Canvas.LeftProperty) - 20;
@@ -539,13 +482,13 @@ namespace PuzzlesProj
                     shadowPieces[currentPiece.Index].SetValue(Canvas.ZIndexProperty, 4999);
                     currentPiece.BitmapEffect = shadowEffect;
 
-                    currentPiece.RenderTransform = stZoomed;
+                    currentPiece.RenderTransform = stZoomed;//зумуємо дану вибірку
                     currentPiece.IsSelected = true;
                     shadowPieces[currentPiece.Index].RenderTransform = stZoomed;
                 }
-                SetSelectionRectangle(-1, -1, -1, -1);
+                SetSelectionRectangle(-1, -1, -1, -1);//стирається прямокутник
             }
-            else
+            else//якщо в руці щось все таки було, то кладемо просто вибірку на те місце
             {
                 var newX = Mouse.GetPosition(cnvPuzzle).X - 20;
                 var newY = Mouse.GetPosition(cnvPuzzle).Y - 20;
@@ -571,9 +514,9 @@ namespace PuzzlesProj
 
                     currentSelection.Clear();
 
-                    if (IsPuzzleCompleted())
+                    if (IsPuzzleCompleted())//кожен раз, коли відпускаємо руку з пазлом, перевіряємо, чи пазл зібраний
                     {
-                        var result = MessageBox.Show("Congratulations! You have solved the puzzle!\r\nWanna save it in a file now?", "Puzzle Completed", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                        var result = MessageBox.Show("You did it! Wanna save to a file?", "Puzzle Completed", MessageBoxButton.YesNo, MessageBoxImage.Information);
 
                         if (result == MessageBoxResult.Yes)
                         {
@@ -612,9 +555,9 @@ namespace PuzzlesProj
         //тикнули на ліву клавішу мишки
         void piece_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            var chosenPiece = (Piece)sender;//оце чотко
+            var chosenPiece = (Piece)sender;
 
-            if (chosenPiece.Parent is WrapPanel)//якщо тикнули на штріха з можливих виборів
+            if (chosenPiece.Parent is WrapPanel)
             {
                 if (currentSelection.Count() > 0)//то короче кладемо ті, що в руці назад
                 {
@@ -626,12 +569,12 @@ namespace PuzzlesProj
                     p.ScaleTransform.ScaleX = 1.0;
                     p.ScaleTransform.ScaleY = 1.0;
                     p.RenderTransform = tt;
-                    p.X = -1;
+                    p.X = -1;//це одна з вказівок на те, що пазлик не на полотні
                     p.Y = -1;
                     p.IsSelected = false;
                     p.SetValue(Canvas.ZIndexProperty, 0);
                     p.BitmapEffect = null;
-                    p.Visibility = System.Windows.Visibility.Visible;
+                    p.Visibility = Visibility.Visible;
                     pnlPickUp.Children.Add(p);//додаємо його в панель пікапу
 
                     currentSelection.Clear();//чистимо всю руку
@@ -643,7 +586,7 @@ namespace PuzzlesProj
                     chosenPiece.SetValue(Canvas.ZIndexProperty, 5000);
                     shadowPieces[chosenPiece.Index].SetValue(Canvas.ZIndexProperty, 4999);
                     chosenPiece.BitmapEffect = shadowEffect;
-                    chosenPiece.RenderTransform = stZoomed;
+                    chosenPiece.RenderTransform = stZoomed;//збільшуємо зображення
                     shadowPieces[chosenPiece.Index].RenderTransform = stZoomed;
                     cnvPuzzle.Children.Add(chosenPiece);
                     chosenPiece.Visibility = Visibility.Hidden;
@@ -686,6 +629,7 @@ namespace PuzzlesProj
         {
             initialRectangleX = Mouse.GetPosition((IInputElement)sender).X;
             initialRectangleY = Mouse.GetPosition((IInputElement)sender).Y;
+            //посуті цей метод взагалі нічого такого не робить(хіба коориднати прямокутника певного встановлює)
             SetSelectionRectangle(initialRectangleX, initialRectangleY, initialRectangleX, initialRectangleY);
         }
 
@@ -706,9 +650,8 @@ namespace PuzzlesProj
 
             if (Mouse.LeftButton == MouseButtonState.Pressed)//якщо ведемо і клікаємо(беремо пару пазлів в руку зразу)
             {
-                SetSelectionRectangle(initialRectangleX, initialRectangleY, newX, newY);
-            }
-            //треба поміняти лінзи
+                SetSelectionRectangle(initialRectangleX, initialRectangleY, newX, newY);//оце якраз той вибір і ті координати
+            }            
             else//якщо просто рухаємо мишкою без тикання лівою кнопкою мишки
             {
                 if (currentSelection.Count > 0)//якщо щось є в руці
@@ -719,16 +662,14 @@ namespace PuzzlesProj
                     foreach (var currentPiece in currentSelection)
                     {
                         var relativeCellX = currentPiece.X - firstPiece.X;
-                        var relativeCellY = currentPiece.Y - firstPiece.Y;
+                        var relativeCellY = currentPiece.Y - firstPiece.Y;                        
 
-                        double rotatedCellX = relativeCellX;
-                        double rotatedCellY = relativeCellY;
+                        //дані пару рядків відпоівдають за позиціонування пазликів в повітрі, коли ми їх маємо в руці                        
+                        currentPiece.SetValue(Canvas.LeftProperty, newX - 50 + relativeCellX * 100);
+                        currentPiece.SetValue(Canvas.TopProperty, newY - 50 + relativeCellY * 100);
 
-                        currentPiece.SetValue(Canvas.LeftProperty, newX - 50 + rotatedCellX * 100);
-                        currentPiece.SetValue(Canvas.TopProperty, newY - 50 + rotatedCellY * 100);
-
-                        shadowPieces[currentPiece.Index].SetValue(Canvas.LeftProperty, newX - 50 + rotatedCellX * 100);
-                        shadowPieces[currentPiece.Index].SetValue(Canvas.TopProperty, newY - 50 + rotatedCellY * 100);
+                        shadowPieces[currentPiece.Index].SetValue(Canvas.LeftProperty, newX - 50 + relativeCellX * 100);
+                        shadowPieces[currentPiece.Index].SetValue(Canvas.TopProperty, newY - 50 + relativeCellY * 100);
                     }
                 }
             }
@@ -737,7 +678,7 @@ namespace PuzzlesProj
         //мишка перестає бути на полотні
         void cnvPuzzle_MouseLeave(object sender, MouseEventArgs e)
         {
-            SetSelectionRectangle(-1, -1, -1, -1);//оце якась дикість
+            SetSelectionRectangle(-1, -1, -1, -1);//стирається прямокутник
             if (currentSelection.Count() > 0)//якщо щось є в руці
             {
                 int count = currentSelection.Count();
@@ -836,21 +777,7 @@ namespace PuzzlesProj
         {
             this.WindowStyle = System.Windows.WindowStyle.None;
             grdWindow.RowDefinitions[0].Height = new GridLength(32);
-        }
-
-        //оцей екшн напевно відповідає за масштабування всього вікна
-        private void brdWindow_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            moving = !moving;
-
-            if (moving)
-            {
-                offsetX = Mouse.GetPosition((IInputElement)sender).X - (double)this.GetValue(Canvas.LeftProperty);
-                offsetY = Mouse.GetPosition((IInputElement)sender).Y - (double)this.GetValue(Canvas.TopProperty);
-                lastMouseDownX = Mouse.GetPosition((IInputElement)sender).X;
-                lastMouseDownY = Mouse.GetPosition((IInputElement)sender).Y;
-            }
-        }
+        }                
 
         //що буде, якщо мінімізувати вікно
         private void txtMinimize_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
