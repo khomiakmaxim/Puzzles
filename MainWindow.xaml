@@ -28,7 +28,8 @@
         <Grid Name="grdWindow" Margin="25,0,25,25">
             <Grid.RowDefinitions>
                 <RowDefinition Height="32"/>
-                <RowDefinition/>
+                <RowDefinition Height="130*"/>
+                <RowDefinition Height="151*"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="100"/>
@@ -51,7 +52,7 @@
                 <TextBlock Grid.Column="3"  Name="txtClose" FontFamily="Webdings" FontSize="20" Foreground="White" MouseLeftButtonUp="txtClose_MouseLeftButtonUp">r</TextBlock>
             </Grid>
             <!--Найлівіша бокова панель-->
-            <StackPanel Grid.Row="1" Width="100" HorizontalAlignment="Left" VerticalAlignment="Stretch" Background="Transparent" MouseEnter="StackPanel_MouseEnter">
+            <StackPanel Name="stackPanel" Grid.Row="1" Width="100" HorizontalAlignment="Left" VerticalAlignment="Stretch" Background="Transparent" MouseEnter="StackPanel_MouseEnter" Grid.RowSpan="2">
                 <Button Name="btnNewPuzzle" Width="100" HorizontalAlignment="Center" Margin="10" Click="btnNewPuzzle_Click">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -72,7 +73,8 @@
                         <TextBlock Grid.Row="1" Name="txtShowImage" FontSize="12" Text="Show Image"/>
                     </Grid>
                 </Button>
-                <Button Name="btnShowPuzzle" Width="100" HorizontalAlignment="Center" Margin="10" Click="btnShowPuzzle_Click" Visibility="Collapsed"><!--Will be changed by show puzzle-->
+                <Button Name="btnShowPuzzle" Width="100" HorizontalAlignment="Center" Margin="10" Click="btnShowPuzzle_Click" Visibility="Collapsed">
+                    <!--Will be changed by show puzzle-->
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="60"/>
@@ -83,11 +85,11 @@
                     </Grid>
                 </Button>
                 <!--Stack Panel для слайдера-->
-                    <StackPanel>
+                <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Zoom" HorizontalAlignment="Center" Background="Transparent" Foreground="BlanchedAlmond"/>
                         <!--Слайдер має певне значення якого набуває його скрол-->
-                            <Slider Name="zoomSlider" Orientation="Vertical" Height="100" HorizontalAlignment="Center" MinHeight="0" Maximum="2" Value="1"/>
+                        <Slider Name="zoomSlider" Orientation="Vertical" Height="100" HorizontalAlignment="Center" MinHeight="0" Maximum="2" Value="1"/>
                         <Grid Width="50">
                             <TextBlock Text="x2" HorizontalAlignment="Center" VerticalAlignment="Top" Background="Transparent" Foreground="BlanchedAlmond"/>
                             <TextBlock Text="x1" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent" Foreground="BlanchedAlmond"/>
@@ -95,12 +97,19 @@
                         </Grid>
                     </StackPanel>
                 </StackPanel>
+                <TextBlock Margin="5,2,48,2" Text="Columns" 
+                   Foreground="LightSteelBlue"/>
+                <TextBox MinWidth="50" Name="txtColumns" Background="White" Margin="0,0,40,0" />
+                <TextBlock Margin="5,2,48,2" Text="Rows" 
+                   Foreground="LightSteelBlue"/>
+                <TextBox MinWidth="50" Name="txtRows" Background="white" Margin="0,0,40,0" />
             </StackPanel>
             <!--Площина, на якій збирається пазл разом з панеллю для вибору елементів-->
-            <Grid Name="grdPuzzle" Grid.Row="1" Grid.Column="1" MouseEnter="DockPanel_MouseEnter">
+            <Grid Name="grdPuzzle" Grid.Row="1" Grid.Column="1" MouseEnter="DockPanel_MouseEnter" Grid.RowSpan="2">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
-                    <RowDefinition Height="10"/><!--Простір для gridSplitter'a-->
+                    <RowDefinition Height="10"/>
+                    <!--Простір для gridSplitter'a-->
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <!--На цьому візуальному елементі відображатиметься або пазл, або повна картинка-->
@@ -115,34 +124,7 @@
                                         ScaleY="{Binding ElementName=zoomSlider, Path=Value}"/>
                             </Canvas.RenderTransform>
                             <Canvas.Background>
-                                <!--Малюється сіра плитка-->
-                                <DrawingBrush Viewport="0,0,0.1,0.1" TileMode="Tile" Opacity="1.0">
-                                    <DrawingBrush.Drawing>
-                                        <DrawingGroup>
-                                            <GeometryDrawing Brush="LightCyan">
-                                                <GeometryDrawing.Geometry>
-                                                    <RectangleGeometry Rect="0,0,100,100"/>
-                                                </GeometryDrawing.Geometry>
-                                            </GeometryDrawing>
-
-                                            <!--Загальний прямокутник має в собі інші 2, які йдуть по діагонілі-->
-                                            <GeometryDrawing>
-                                                <GeometryDrawing.Geometry>
-                                                    <GeometryGroup>
-                                                        <RectangleGeometry Rect="0,0,50,50"/>
-                                                        <RectangleGeometry Rect="50,50,50,50"/>
-                                                    </GeometryGroup>
-                                                </GeometryDrawing.Geometry>
-                                                <GeometryDrawing.Brush>
-                                                    <LinearGradientBrush>
-                                                        <GradientStop Offset="0.0" Color="Gray"/>
-                                                        <GradientStop Offset="1.0" Color="Beige"/>
-                                                    </LinearGradientBrush>
-                                                </GeometryDrawing.Brush>
-                                            </GeometryDrawing>
-                                        </DrawingGroup>
-                                    </DrawingBrush.Drawing>
-                                </DrawingBrush>
+                                <SolidColorBrush Color="White"/>
                             </Canvas.Background>
 
                         </Canvas>
@@ -158,10 +140,10 @@
                 </GridSplitter>
                 <!--Елемент, з якого вибираються пазли-->
                 <ScrollViewer Grid.Row="2" Name="scvPickUp" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="Visible">
-                    <WrapPanel Name="pnlPickUp" Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left" Height="2000" Width="2000">
+                    <WrapPanel Name="pnlPickUp" Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left" Height="2000" Width="1000">
                         <WrapPanel.RenderTransform>
                             <!--Та ж трансформація що і з верхнім елементом-->
-                                <ScaleTransform
+                            <ScaleTransform
                                 ScaleX="{Binding ElementName=zoomSlider, Path=Value}"
                                 ScaleY="{Binding ElementName=zoomSlider, Path=Value}"/>
                         </WrapPanel.RenderTransform>
@@ -194,10 +176,11 @@
                             </DrawingBrush>
                         </WrapPanel.Background>
                     </WrapPanel>
+                    
                 </ScrollViewer>
             </Grid>
             <!--Відображення цілого картинки-->
-                <ScrollViewer Name="scvImage" Grid.Row="1" Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" HorizontalAlignment="Left" VerticalAlignment="Bottom" Visibility="Visible">
+            <ScrollViewer Name="scvImage" Grid.Row="1" Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" HorizontalAlignment="Left" VerticalAlignment="Bottom" Visibility="Visible" Grid.RowSpan="2">
                 <Image Name="imgShowImage" Width="2000" Height="2000" HorizontalAlignment="Left" VerticalAlignment="Top" Stretch="None">
                     <Image.RenderTransform>
                         <ScaleTransform

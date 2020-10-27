@@ -26,8 +26,10 @@ namespace PuzzlesProj
         int selectionAngle = 0;
         List<Piece> pieces = new List<Piece>();
         List<Piece> shadowPieces = new List<Piece>();
-        int columns = 5;
-        int rows = 4;
+        int columns;//кілкість колонок, на які все розбивається
+        int rows;//кількість рядків
+        int Width;
+        int Height;
         double scale = 1.0;//коефіцієнт масштабування
         BitmapImage imageSource;
         string srcFileName = "";
@@ -38,9 +40,8 @@ namespace PuzzlesProj
             ScaleY = 1.1 
         };
         
-
-        ViewMode currentViewMode = ViewMode.Puzzle;
-        PngBitmapEncoder png;               
+        
+        PngBitmapEncoder png;//encodes png to bmp image            
         double initialRectangleX = 0;
         double initialRectangleY = 0;
         Rectangle rectSelection = new Rectangle();
@@ -56,7 +57,8 @@ namespace PuzzlesProj
             cnvPuzzle.MouseMove += new MouseEventHandler(cnvPuzzle_MouseMove);
             cnvPuzzle.MouseWheel += new MouseWheelEventHandler(cnvPuzzle_MouseWheel);
             cnvPuzzle.MouseEnter += new MouseEventHandler(cnvPuzzle_MouseEnter);
-            cnvPuzzle.MouseLeave += new MouseEventHandler(cnvPuzzle_MouseLeave);
+            cnvPuzzle.MouseLeave += new MouseEventHandler(cnvPuzzle_MouseLeave);            
+            
             
             shadowEffect = new DropShadowBitmapEffect()
             {
@@ -75,7 +77,8 @@ namespace PuzzlesProj
         private void CreatePuzzle(Stream streamSource)
         {
             Random rnd = new Random();                                  
-            png = null;
+            png = null;            
+            
 
             imageSource = null;            
             
@@ -95,15 +98,16 @@ namespace PuzzlesProj
             cnvPuzzle.Visibility = Visibility.Visible;
 
             var angles = new int[] { 0, 90, 180, 270 };
+            
 
-            int index = 0;//індексація кожного пазла
+            int index = 0;//присвоєння індекса кожному пазлу
             for (var y = 0; y < rows; ++y)
             {
                 for (var x = 0; x < columns; ++x)
                 {                                       
                         int angle = 0;
 
-                        var piece = new Piece(imageSource, x, y, false, index, scale);
+                        var piece = new Piece(imageSource, x, y, rows, columns, false, index, scale);
                         piece.SetValue(Canvas.ZIndexProperty, 1000 + x * rows + y);
                         //додаємо пару хендлерів
                         piece.MouseLeftButtonUp += new MouseButtonEventHandler(piece_MouseLeftButtonUp);
@@ -111,7 +115,7 @@ namespace PuzzlesProj
                         piece.Rotate(angle);
 
                         //відповідна тінь
-                        var shadowPiece = new Piece(imageSource, x, y, false, index, scale);
+                        var shadowPiece = new Piece(imageSource, x, y, rows, columns, false, index, scale);
                         shadowPiece.SetValue(Canvas.ZIndexProperty, x * rows + y);//менше на 1000 від того, що її кидає
                         shadowPiece.Rotate(angle);
                         
@@ -121,15 +125,20 @@ namespace PuzzlesProj
                 }
             }
             
-            var tt = new TranslateTransform() { X = 20, Y = 20 };//це потрібно через попередній зсув
+            var tt = new TranslateTransform() { X = 0, Y = 0 };//це потрібно через попередній зсув
+
+            var shuffledPieces = pieces.OrderBy(i => Guid.NewGuid()).ToList();
+            int it = 0;
+
+            
 
             //заповнення панелі вибору
-            foreach (var p in pieces)
+            foreach (var p in shuffledPieces)
             {
                 Random random = new Random();
 
                 //випадковим чином встановлюється положення на панелі вибору
-                int i = random.Next(0, pnlPickUp.Children.Count);
+                
 
                 p.ScaleTransform.ScaleX = 1.0;
                 p.ScaleTransform.ScaleY = 1.0;
@@ -137,60 +146,19 @@ namespace PuzzlesProj
                 p.X = -1;
                 p.Y = -1;
                 p.IsSelected = false;
+                //double angle = angles[rnd.Next(0, 4)];
+                //p.Rotate(angle);
+                //shadowPieces[p.Index].Rotate(angle);//той самий тіневий пазл повертаємо на той же кут
 
-                pnlPickUp.Children.Insert(i, p);//заповнюється wrapPanel
+                pnlPickUp.Children.Insert(it++, p);//заповнюється wrapPanel
 
                 //випадковим чином вибирається кут повороту
-                double angle = angles[rnd.Next(0, 4)];
-                p.Rotate(angle);
-                shadowPieces[p.Index].Rotate(angle);//той самий тіневий пазл повертаємо на той же кут
-            }
+                
+            }            
             
             rectSelection.SetValue(Canvas.ZIndexProperty, 5000);            
             cnvPuzzle.Children.Add(rectSelection);
-        }
-        
-        //викликається лише тоді, коли пазл зібраний
-        private void SavePuzzle()
-        {
-            var sfd = new SaveFileDialog
-            {
-                Filter = "All Image Files ( JPEG,GIF,BMP,PNG)|" +
-                    "*.jpg;*.jpeg;*.gif;*.bmp;*.png|JPEG Files ( *.jpg;*.jpeg )|" +
-                    "*.jpg;*.jpeg|GIF Files ( *.gif )|*.gif|BMP Files ( *.bmp )|" +
-                    "*.bmp|PNG Files ( *.png )|*.png",
-                Title = "Save the image of your completed puzzle",
-                FileName = srcFileName.Split('.')[0] + "_puzzle." +
-                    srcFileName.Split('.')[1]
-            };
-
-            sfd.DefaultExt = "png";
-            sfd.ShowDialog();
-            
-            var query = from p in pieces
-                        select p;
-
-            //знаходимо границі по всіх краях
-            var minX = query.Min<Piece>(x => x.X);
-            var maxX = query.Max<Piece>(x => x.X);
-            var minY = query.Min<Piece>(x => x.Y);
-            var maxY = query.Max<Piece>(x => x.Y);
-
-            //Перетворює об'єкт Visual в растрове зображення.
-            var rtb = new RenderTargetBitmap((int)(maxX - minX + 1) * 100 + 40,
-               (int)(maxY - minY + 1) * 100 + 40, 100, 100, PixelFormats.Pbgra32);
-            cnvPuzzle.Arrange(new Rect(-minX * 100, -minY * 100,
-                (int)(maxX - minX + 1) * 100 + 40, (int)(maxY - minY + 1) * 100 + 40));
-            rtb.Render(cnvPuzzle);//рендериться зображення складеного пазла
-
-            png = new PngBitmapEncoder();
-            png.Frames.Add(BitmapFrame.Create(rtb));
-            
-            using (StreamWriter sw = new StreamWriter(sfd.FileName))
-            {
-                png.Save(sw.BaseStream);
-            }
-        }
+        }                        
 
         //скидання всіх можливих прив'язок(потірбне при створенні нового пазлу)
         private void DestroyReferences()
@@ -237,11 +205,10 @@ namespace PuzzlesProj
         
         private Stream LoadImage(string srcFileName)
         {
-            imageSource = new BitmapImage(new Uri(srcFileName));            
-            
-            columns = (int)Math.Ceiling(imageSource.PixelWidth / 100.0);
-            rows = (int)Math.Ceiling(imageSource.PixelHeight / 100.0);
+            imageSource = new BitmapImage(new Uri(srcFileName));
 
+            this.Width = (int)imageSource.Width / columns;
+            this.Height = (int)imageSource.Height / rows;
             //створюємо якесь нове зображення(копія старого)
             var bi = new BitmapImage(new Uri(srcFileName));
             //створюємо нову кисть, яка буде замальовувати пазли нашим зображенням
@@ -249,17 +216,17 @@ namespace PuzzlesProj
             
             imgBrush.AlignmentX = AlignmentX.Left;
             imgBrush.AlignmentY = AlignmentY.Top;
-            imgBrush.Stretch = Stretch.UniformToFill;//розтягуємо з збереженням початкових відношень(якщо не вдаєтсья, то обрізаємо)
+            imgBrush.Stretch = Stretch.None;//розтягуємо з збереженням початкових відношень(якщо не вдаєтсья, то обрізаємо)
             
-            RenderTargetBitmap rtb = new RenderTargetBitmap((columns + 1) * 100, (rows + 1) * 100, bi.DpiX, bi.DpiY, PixelFormats.Pbgra32);
+            RenderTargetBitmap rtb = new RenderTargetBitmap(columns * Width, rows * Height, bi.DpiX, bi.DpiY, PixelFormats.Pbgra32);
             
             var rectBlank = new Rectangle();
-            rectBlank.Width = columns * 100;
-            rectBlank.Height = rows * 100;
+            rectBlank.Width = columns * Width;
+            rectBlank.Height = rows * Height;
             rectBlank.HorizontalAlignment = HorizontalAlignment.Left;
             rectBlank.VerticalAlignment = VerticalAlignment.Top;
             rectBlank.Fill = new SolidColorBrush(Colors.White);
-            rectBlank.Arrange(new Rect(0, 0, columns * 100, rows * 100));
+            rectBlank.Arrange(new Rect(0, 0, columns * Width, rows * Height));
 
             var rectImage = new Rectangle();
             rectImage.Width = imageSource.PixelWidth;
@@ -267,13 +234,13 @@ namespace PuzzlesProj
             rectImage.HorizontalAlignment = HorizontalAlignment.Left;
             rectImage.VerticalAlignment = VerticalAlignment.Top;
             rectImage.Fill = imgBrush;
-            rectImage.Arrange(new Rect((columns * 100 - imageSource.PixelWidth) / 2, (rows * 100 - imageSource.PixelHeight) / 2, imageSource.PixelWidth, imageSource.PixelHeight));
+            rectImage.Arrange(new Rect((columns * Width - imageSource.PixelWidth) / 2, (rows * Height - imageSource.PixelHeight) / 2, imageSource.PixelWidth, imageSource.PixelHeight));
 
             rectImage.Margin = new Thickness(
-                (columns * 100 - imageSource.PixelWidth) / 2,
-                (rows * 100 - imageSource.PixelHeight) / 2,
-                (rows * 100 - imageSource.PixelHeight) / 2,
-                (columns * 100 - imageSource.PixelWidth) / 2);
+                (columns * Width - imageSource.PixelWidth) / 2,
+                (rows * Height - imageSource.PixelHeight) / 2,
+                (rows * Height - imageSource.PixelHeight) / 2,
+                (columns * Width - imageSource.PixelWidth) / 2);
 
             rtb.Render(rectBlank);
             rtb.Render(rectImage);
@@ -337,14 +304,14 @@ namespace PuzzlesProj
             bool ret = true;
 
             //cellX і cellY - позиціонування в пазлових одиницях
-            double cellX = (int)((newX) / 100);
-            double cellY = (int)((newY) / 100);                        
+            double cellX = (int)((newX) / Width);
+            double cellY = (int)((newY) / Height);                        
             
             var q = from p in pieces//фільтруємо шматки
                     where (                            
                             (p.Index != currentSelection.Index) &&//очевидно що їх перевіряти не потрібно
                             (!p.IsSelected) &&                                
-                            ((p.X == cellX) && (p.Y == cellY))                                
+                            (((p.X == cellX) && (p.Y == cellY)) || ((p.Y == cellX) && (p.X == cellY)))                              
                            )
                     select p;
 
@@ -358,19 +325,19 @@ namespace PuzzlesProj
         
         private Point SetCurrentPiecePosition(Piece currentPiece, double newX, double newY)
         {
-            double cellX = (int)((newX) / 100);//переведення в пазликові одиниці
-            double cellY = (int)((newY) / 100);            
+            double cellX = (int)((newX) / Width);//переведення в пазликові одиниці
+            double cellY = (int)((newY) / Height);            
 
             currentPiece.X = cellX;//переписуємо позиціонування пазла
             currentPiece.Y = cellY;
 
             //якраз таки ставимо пазлик на відповідну позицію
-            currentPiece.SetValue(Canvas.LeftProperty, currentPiece.X * 100);
-            currentPiece.SetValue(Canvas.TopProperty, currentPiece.Y * 100);
+            currentPiece.SetValue(Canvas.LeftProperty, currentPiece.X * Width);
+            currentPiece.SetValue(Canvas.TopProperty, currentPiece.Y * Height);
 
             //робимо це ж саме з тіневим елементом(він ставиться туди ж)
-            shadowPieces[currentPiece.Index].SetValue(Canvas.LeftProperty, currentPiece.X * 100);
-            shadowPieces[currentPiece.Index].SetValue(Canvas.TopProperty, currentPiece.Y * 100);
+            shadowPieces[currentPiece.Index].SetValue(Canvas.LeftProperty, currentPiece.X * Width);
+            shadowPieces[currentPiece.Index].SetValue(Canvas.TopProperty, currentPiece.Y * Height);
 
             return new Point(cellX, cellY);
         }
@@ -395,15 +362,15 @@ namespace PuzzlesProj
         {
             if (currentSelection == null)
             {
-                double x1 = (double)rectSelection.GetValue(Canvas.LeftProperty) - 20;
-                double y1 = (double)rectSelection.GetValue(Canvas.TopProperty) - 20;
+                double x1 = (double)rectSelection.GetValue(Canvas.LeftProperty);
+                double y1 = (double)rectSelection.GetValue(Canvas.TopProperty);
                 double x2 = x1 + rectSelection.Width;
                 double y2 = y1 + rectSelection.Height;
 
-                int cellX1 = (int)(x1 / 100);
-                int cellY1 = (int)(y1 / 100);
-                int cellX2 = (int)(x2 / 100);
-                int cellY2 = (int)(y2 / 100);
+                int cellX1 = (int)(x1 / Width);
+                int cellY1 = (int)(y1 / Height);
+                int cellX2 = (int)(x2 / Width);
+                int cellY2 = (int)(y2 / Height);
 
                 var query = from p in pieces
                             where
@@ -427,8 +394,8 @@ namespace PuzzlesProj
             }
             else
             {
-                var newX = Mouse.GetPosition(cnvPuzzle).X - 20;
-                var newY = Mouse.GetPosition(cnvPuzzle).Y - 20;
+                var newX = Mouse.GetPosition(cnvPuzzle).X;
+                var newY = Mouse.GetPosition(cnvPuzzle).Y;
                 if (TrySetCurrentPiecePosition(newX, newY))
                 {                                        
                     currentSelection.BitmapEffect = null;
@@ -445,12 +412,7 @@ namespace PuzzlesProj
 
                     if (IsPuzzleCompleted())//кожен раз, коли відпускаємо руку з пазлом, перевіряємо, чи пазл зібраний
                     {
-                        var result = MessageBox.Show("Пазл складено! Бажаєте зберегти у файл?", "Puzzle Completed", MessageBoxButton.YesNo, MessageBoxImage.Information);
-
-                        if (result == MessageBoxResult.Yes)
-                        {
-                            SavePuzzle();
-                        }
+                        var result = MessageBox.Show("Пазл складено!", "Puzzle Completed", MessageBoxButton.OK, MessageBoxImage.Information);                        
                     }
                 }
                 selectionAngle = 0;
@@ -486,12 +448,12 @@ namespace PuzzlesProj
                     cnvPuzzle.Children.Remove(p);
                     cnvPuzzle.Children.Remove(shadowPieces[p.Index]);
 
-                    var tt = new TranslateTransform() { X = 20, Y = 20 };
+                    var tt = new TranslateTransform() { X = -1, Y = -1 };
                     p.ScaleTransform.ScaleX = 1.0;
                     p.ScaleTransform.ScaleY = 1.0;
                     p.RenderTransform = tt;
-                    p.X = -1;
-                    p.Y = -1;
+                    //p.X = -1;
+                    //p.Y = -1;
                     p.IsSelected = false;
                     p.SetValue(Canvas.ZIndexProperty, 0);
                     p.BitmapEffect = null;
@@ -553,11 +515,11 @@ namespace PuzzlesProj
         
         private void MouseMoving()
         {
-            var newX = Mouse.GetPosition((IInputElement)cnvPuzzle).X - 20;
-            var newY = Mouse.GetPosition((IInputElement)cnvPuzzle).Y - 20;
+            var newX = Mouse.GetPosition((IInputElement)cnvPuzzle).X;
+            var newY = Mouse.GetPosition((IInputElement)cnvPuzzle).Y;
 
-            int cellX = (int)((newX) / 100);
-            int cellY = (int)((newY) / 100);
+            int cellX = (int)((newX) / Width);
+            int cellY = (int)((newY) / Height);
 
             if (Mouse.LeftButton == MouseButtonState.Pressed)
             {
@@ -569,11 +531,11 @@ namespace PuzzlesProj
                 {                                                                
 
                     //дані пару рядків відпоівдають за позиціонування пазла в повітрі, коли користувач має його в руці                        
-                    currentSelection.SetValue(Canvas.LeftProperty, newX - 50);
-                    currentSelection.SetValue(Canvas.TopProperty, newY - 50);
+                    currentSelection.SetValue(Canvas.LeftProperty, newX);
+                    currentSelection.SetValue(Canvas.TopProperty, newY);
 
-                    shadowPieces[currentSelection.Index].SetValue(Canvas.LeftProperty, newX - 50);
-                    shadowPieces[currentSelection.Index].SetValue(Canvas.TopProperty, newY - 50);                    
+                    shadowPieces[currentSelection.Index].SetValue(Canvas.LeftProperty, newX);
+                    shadowPieces[currentSelection.Index].SetValue(Canvas.TopProperty, newY);                    
                 }
             }
         }
@@ -588,7 +550,7 @@ namespace PuzzlesProj
                     cnvPuzzle.Children.Remove(p);
                     cnvPuzzle.Children.Remove(shadowPieces[p.Index]);
 
-                    var tt = new TranslateTransform() { X = 20, Y = 20 };
+                    var tt = new TranslateTransform() { X = 0, Y = 0 };
                     p.ScaleTransform.ScaleX = 1.0;
                     p.ScaleTransform.ScaleY = 1.0;
                     p.RenderTransform = tt;
@@ -606,7 +568,25 @@ namespace PuzzlesProj
         }
         
         private void btnNewPuzzle_Click(object sender, RoutedEventArgs e)
-        {            
+        {
+            try
+            {
+                columns = int.Parse(txtColumns.Text);
+                rows = int.Parse(txtRows.Text);
+
+                if (columns < 1 || rows < 1)
+                {
+                    throw new Exception("Innapropriate size.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Check your rows and columns input.\n" + ex.Message);
+                return;
+            }
+
+            
+
             var ofd = new OpenFileDialog()
             {
                 Filter = "All Image Files ( JPEG,GIF,BMP,PNG)|*.jpg;*.jpeg;*.gif;*.bmp;*.png|JPEG Files ( *.jpg;*.jpeg )|*.jpg;*.jpeg|GIF Files ( *.gif )|*.gif|BMP Files ( *.bmp )|*.bmp|PNG Files ( *.png )|*.png",
@@ -621,7 +601,7 @@ namespace PuzzlesProj
                 {
                     DestroyReferences();
                     srcFileName = ofd.FileName;
-                    using (Stream streamSource = LoadImage(srcFileName))
+                    using (Stream streamSource = LoadImage(srcFileName))//
                     {
                         CreatePuzzle(streamSource);
                     }
@@ -637,8 +617,7 @@ namespace PuzzlesProj
         private void btnShowImage_Click(object sender, RoutedEventArgs e)
         {
             grdPuzzle.Visibility = Visibility.Hidden;
-            scvImage.Visibility = Visibility.Visible;
-            currentViewMode = ViewMode.Picture;
+            scvImage.Visibility = Visibility.Visible;            
             btnShowImage.Visibility = Visibility.Collapsed;
             btnShowPuzzle.Visibility = Visibility.Visible;
         }
@@ -646,8 +625,7 @@ namespace PuzzlesProj
         private void btnShowPuzzle_Click(object sender, RoutedEventArgs e)
         {            
             grdPuzzle.Visibility = Visibility.Visible;
-            scvImage.Visibility = Visibility.Hidden;
-            currentViewMode = ViewMode.Puzzle;
+            scvImage.Visibility = Visibility.Hidden;            
             btnShowImage.Visibility = Visibility.Visible;
             btnShowPuzzle.Visibility = Visibility.Collapsed;
         }

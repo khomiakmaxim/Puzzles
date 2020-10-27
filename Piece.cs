@@ -47,8 +47,11 @@ namespace PuzzlesProj
             
         }
 
-        public Piece(ImageSource imageSource, double x, double y, bool isShadow, int index, double scale)
+        public Piece(ImageSource imageSource, double x, double y, int rows, int columns, bool isShadow, int index, double scale)
         {
+            int Width = (int)imageSource.Width / columns;
+            int Height = (int)imageSource.Height / rows;
+
             this.ImageUri = imageUri;
             this.InitialX = x;
             this.InitialY = y;
@@ -77,29 +80,29 @@ namespace PuzzlesProj
                 ImageSource = imageSource,//uri картинки
                 Stretch = Stretch.None,//контент зберігає свій початковий розмір                
                 //viewport встановлює координати відрисування viewbox'a 
-                Viewport = new Rect(-20, -20, 140, 140),
+                Viewport = new Rect(0, 0, Width, Height),
                 ViewportUnits = BrushMappingMode.Absolute,//використовуються одиниці відносно лівого верхнього кута самого пазла
                 Viewbox = new Rect(//в залежності від того, що за пазл вирізається, ми даємо йому вигляд замальовки
-                    x * 100 - 10,
-                    y * 100 - 10,
-                    120,
-                    120),
+                    x * Width,
+                    y * Height,
+                    Width,
+                    Height),
                 ViewboxUnits = BrushMappingMode.Absolute,
                 Transform = imageScaleTransform
             };
                        
 
             GeometryGroup gg = new GeometryGroup();
-            gg.Children.Add(new RectangleGeometry(new Rect(0, 0, 100, 100)));        
+            gg.Children.Add(new RectangleGeometry(new Rect(0, 0, Width, Height)));        
             
             //path.Data визначає об'єкт Geometry - геометричний об'єкт для відмальовки
-            path.Data = gg;//частинка буде відмальованою у квадратному вигляді
+            path.Data = gg;//частинка буде відмальованою у прямокутному вигляді
             shadowPath.Data = gg;
 
             var rt = new RotateTransform
             { 
-                CenterX = 50,//все повертається відносно центру пазла
-                CenterY = 50,
+                CenterX = Width/3,
+                CenterY = Height/3,
                 Angle = 0
             };
 
@@ -117,8 +120,8 @@ namespace PuzzlesProj
 
             tt2 = new TranslateTransform()
             {
-                X = 1,
-                Y = 1
+                X = 0,
+                Y = 0
             };
 
             tg2.Children.Add(tt2);
@@ -127,8 +130,8 @@ namespace PuzzlesProj
             shadowPath.RenderTransform = tg2;
 
                                 
-            this.Width = 140 * scale;
-            this.Height = 140 * scale;
+            this.Width = Width * scale;
+            this.Height = Height * scale;
             
             if (isShadow)
                 this.Children.Add(shadowPath);
@@ -156,8 +159,8 @@ namespace PuzzlesProj
             rt2.Angle = angle;//власне сама трансформація
 
             //встановлюємо те, де буде відмальовуватися на полотні даний пазл
-            this.SetValue(Canvas.LeftProperty, this.X * 100);//100x100 - розмір пазла
-            this.SetValue(Canvas.TopProperty, this.Y * 100);
+            this.SetValue(Canvas.LeftProperty, this.X * Width);//100x100 - розмір пазла
+            this.SetValue(Canvas.TopProperty, this.Y * Height);
         }
         
         public void ClearImage()
