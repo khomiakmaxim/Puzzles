@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PuzzlesProj
 {
-    class Pixel
+    public class Pixel
     {
         public int red;
         public int green;
@@ -17,11 +17,19 @@ namespace PuzzlesProj
             return (0.3 * red) + (0.59 * green) + (0.11 * blue);
         }
 
+        public Pixel()
+        { }
+
         public Pixel(int red = 0, int green = 0, int blue = 0)
         {
             this.red = red;
             this.green = green;
             this.blue = blue;
+        }
+
+        public override string ToString()
+        {
+            return red + " " + green + " " + blue + "\n";
         }
     }
 }

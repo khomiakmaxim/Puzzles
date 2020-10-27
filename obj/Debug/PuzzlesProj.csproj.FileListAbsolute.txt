@@ -13,3 +13,5 @@ C:\Users\Maksym\source\repos\PuzzlesProj\PuzzlesProj\obj\Debug\PuzzlesProj.cspro
 C:\Users\Maksym\source\repos\PuzzlesProj\PuzzlesProj\obj\Debug\PuzzlesProj.csproj.CoreCompileInputs.cache
 C:\Users\Maksym\source\repos\PuzzlesProj\PuzzlesProj\obj\Debug\PuzzlesProj.exe
 C:\Users\Maksym\source\repos\PuzzlesProj\PuzzlesProj\obj\Debug\PuzzlesProj.pdb
+C:\Users\Maksym\source\repos\PuzzlesProj\PuzzlesProj\bin\Debug\System.Drawing.Common.dll
+C:\Users\Maksym\source\repos\PuzzlesProj\PuzzlesProj\obj\Debug\PuzzlesProj.csproj.CopyComplete

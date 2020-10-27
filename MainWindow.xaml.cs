@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -32,17 +33,20 @@ namespace PuzzlesProj
         BitmapImage imageSource;
         string srcFileName = "";
         DropShadowBitmapEffect shadowEffect;//даний об'єкт дозволяє працювати з тінню
-        Point lastCell = new Point(-1, 0);
+        System.Windows.Point lastCell = new System.Windows.Point(-1, 0);
         ScaleTransform stZoomed = new ScaleTransform//трансформація яка відповідає за вибір пазла
         {   ScaleX = 1.1,
             ScaleY = 1.1 
         };
-        
-        
+
+        List<List<List<Pixel>>> chunks = new List<List<List<Pixel>>>();
+
+
+
         PngBitmapEncoder png;            
         double initialRectangleX = 0;
         double initialRectangleY = 0;
-        Rectangle rectSelection = new Rectangle();        
+        System.Windows.Shapes.Rectangle rectSelection = new System.Windows.Shapes.Rectangle();        
         public MainWindow()
         {
             InitializeComponent();
@@ -58,12 +62,12 @@ namespace PuzzlesProj
             shadowEffect = new DropShadowBitmapEffect()
             {
                 Color = Colors.Black,
-                Direction = 120,//встановлює кут, по якому тінь проектується
+                Direction = 310,//встановлює кут, по якому тінь проектується
                 ShadowDepth = 25,//встановлює відстань між пазлом і його тінню
                 Softness = 1,
                 Opacity = 0.5
             };
-        }       
+        }                
         
         private void CreatePuzzle(Stream streamSource)
         {
@@ -83,73 +87,99 @@ namespace PuzzlesProj
                 imageSource.Freeze();
             }
 
+            chunks = new List<List<List<Pixel>>>();
+            Bitmap alg = BitmapImage2Bitmap(imageSource);
+
+            for (int i = 0; i < columns; ++i)
+            {
+                for (int j = 0; j < rows; ++j)
+                {
+                    List<List<Pixel>> ch = new List<List<Pixel>>(Width);
+
+                    for (int x = 0; x < Width; ++x)
+                    {
+                        ch.Add(new List<Pixel>(Height));                        
+                    }
+
+                    for (int x = 0; x < Width; ++x)
+                    {
+                        for (int y = 0; y < Height; ++y)
+                        {
+                            System.Drawing.Color clr = alg.GetPixel(i * columns + x, j * rows + y);
+                            ch[x].Add(new Pixel(clr.R, clr.G, clr.B));
+                        }
+                    }
+
+                    chunks.Add(ch);
+                }
+            }
+
+            MessageBox.Show(chunks[0][70][70].ToString());
+
             imgShowImage.Source = imageSource;
 
             scvImage.Visibility = Visibility.Hidden;
             cnvPuzzle.Visibility = Visibility.Visible;
 
-            var angles = new int[] { 0, 90, 180, 270 };
-            
+            var angles = new int[] { 0, 90, 180, 270 };            
 
             int index = 0;//присвоєння індекса кожному пазлу
             for (var y = 0; y < rows; ++y)
             {
                 for (var x = 0; x < columns; ++x)
                 {                                       
-                        int angle = 0;
+                    int angle = 0;                   
 
-                        var piece = new Piece(imageSource, x, y, rows, columns, false, index, scale);
-                        piece.SetValue(Canvas.ZIndexProperty, 1000 + x * rows + y);
-                        //додаємо пару хендлерів
-                        piece.MouseLeftButtonUp += new MouseButtonEventHandler(piece_MouseLeftButtonUp);
-                        piece.MouseRightButtonUp += new MouseButtonEventHandler(piece_MouseRightButtonUp);                        
-                        piece.Rotate(angle);
+                    var piece = new Piece(imageSource, x, y, rows, columns, false, index, scale);
+                    piece.SetValue(Canvas.ZIndexProperty, 1000 + x * rows + y);
+                    //додаємо пару хендлерів
+                    piece.MouseLeftButtonUp += new MouseButtonEventHandler(piece_MouseLeftButtonUp);
+                    piece.MouseRightButtonUp += new MouseButtonEventHandler(piece_MouseRightButtonUp);                        
+                    piece.Rotate(angle);
 
-                        //відповідна тінь
-                        var shadowPiece = new Piece(imageSource, x, y, rows, columns, false, index, scale);
-                        shadowPiece.SetValue(Canvas.ZIndexProperty, x * rows + y);//менше на 1000 від того, що її кидає
-                        shadowPiece.Rotate(angle);
+                    //відповідна тінь
+                    var shadowPiece = new Piece(imageSource, x, y, rows, columns, false, index, scale);
+                    shadowPiece.SetValue(Canvas.ZIndexProperty, x * rows + y);//менше на 1000 від того, що її кидає
+                    shadowPiece.Rotate(angle);
                         
-                        pieces.Add(piece);
-                        shadowPieces.Add(shadowPiece);
-                        index++;               
+                    pieces.Add(piece);
+                    shadowPieces.Add(shadowPiece);
+                    index++;               
                 }
-            }
-            
-            var tt = new TranslateTransform() { X = 0, Y = 0 };//це потрібно через попередній зсув
+            }                        
 
             var shuffledPieces = pieces.OrderBy(i => Guid.NewGuid()).ToList();
-            int it = 0;
-
-            
-
+            int it = 0;            
             //заповнення панелі вибору
             foreach (var p in shuffledPieces)
             {
                 Random random = new Random();
 
-                //випадковим чином встановлюється положення на панелі вибору
-                
-
                 p.ScaleTransform.ScaleX = 1.0;
-                p.ScaleTransform.ScaleY = 1.0;
-                p.RenderTransform = tt;
+                p.ScaleTransform.ScaleY = 1.0;                
                 p.X = -1;
                 p.Y = -1;
-                p.IsSelected = false;
-                //double angle = angles[rnd.Next(0, 4)];
-                //p.Rotate(angle);
-                //shadowPieces[p.Index].Rotate(angle);//той самий тіневий пазл повертаємо на той же кут
+                p.IsSelected = false;                
 
-                pnlPickUp.Children.Insert(it++, p);//заповнюється wrapPanel
-
-                //випадковим чином вибирається кут повороту
-                
+                pnlPickUp.Children.Insert(it++, p);//заповнюється wrapPanel                                
             }            
             
             rectSelection.SetValue(Canvas.ZIndexProperty, 5000);            
             cnvPuzzle.Children.Add(rectSelection);
-        }                        
+        }
+
+        private Bitmap BitmapImage2Bitmap(BitmapImage bitmapImage)
+        {            
+            using (MemoryStream outStream = new MemoryStream())
+            {
+                BitmapEncoder enc = new BmpBitmapEncoder();
+                enc.Frames.Add(BitmapFrame.Create(bitmapImage));
+                enc.Save(outStream);
+                System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(outStream);
+
+                return new Bitmap(bitmap);
+            }
+        }
 
         //скидання всіх можливих прив'язок(потірбне при створенні нового пазлу)
         private void DestroyReferences()
@@ -194,8 +224,10 @@ namespace PuzzlesProj
             imageSource = null;
         }
         
+        //
         private Stream LoadImage(string srcFileName)
         {
+            //передається назва файлу в системі
             imageSource = new BitmapImage(new Uri(srcFileName));
 
             this.Width = (int)imageSource.Width / columns;
@@ -207,33 +239,25 @@ namespace PuzzlesProj
             
             imgBrush.AlignmentX = AlignmentX.Left;
             imgBrush.AlignmentY = AlignmentY.Top;
-            imgBrush.Stretch = Stretch.None;//розтягуємо з збереженням початкових відношень(якщо не вдаєтсья, то обрізаємо)
+            imgBrush.Stretch = Stretch.None;
             
-            RenderTargetBitmap rtb = new RenderTargetBitmap(columns * Width, rows * Height, bi.DpiX, bi.DpiY, PixelFormats.Pbgra32);
-            
-            var rectBlank = new Rectangle();
-            rectBlank.Width = columns * Width;
-            rectBlank.Height = rows * Height;
-            rectBlank.HorizontalAlignment = HorizontalAlignment.Left;
-            rectBlank.VerticalAlignment = VerticalAlignment.Top;
-            rectBlank.Fill = new SolidColorBrush(Colors.White);
-            rectBlank.Arrange(new Rect(0, 0, columns * Width, rows * Height));
+            //даний об'єк дає можливість перетворити ресурс Visual в bmp
+            RenderTargetBitmap rtb = new RenderTargetBitmap(columns * Width, rows * Height, bi.DpiX, bi.DpiY, PixelFormats.Pbgra32);                        
 
-            var rectImage = new Rectangle();
+            var rectImage = new System.Windows.Shapes.Rectangle();
             rectImage.Width = imageSource.PixelWidth;
             rectImage.Height = imageSource.PixelHeight;
             rectImage.HorizontalAlignment = HorizontalAlignment.Left;
             rectImage.VerticalAlignment = VerticalAlignment.Top;
             rectImage.Fill = imgBrush;
-            rectImage.Arrange(new Rect((columns * Width - imageSource.PixelWidth) / 2, (rows * Height - imageSource.PixelHeight) / 2, imageSource.PixelWidth, imageSource.PixelHeight));
+            rectImage.Arrange(new Rect(0, 0, imageSource.PixelWidth, imageSource.PixelHeight));
 
             rectImage.Margin = new Thickness(
                 (columns * Width - imageSource.PixelWidth) / 2,
                 (rows * Height - imageSource.PixelHeight) / 2,
                 (rows * Height - imageSource.PixelHeight) / 2,
                 (columns * Width - imageSource.PixelWidth) / 2);
-
-            rtb.Render(rectBlank);
+            
             rtb.Render(rectImage);
 
             png = new PngBitmapEncoder();
@@ -314,7 +338,7 @@ namespace PuzzlesProj
             return ret;
         }
         
-        private Point SetCurrentPiecePosition(Piece currentPiece, double newX, double newY)
+        private System.Windows.Point SetCurrentPiecePosition(Piece currentPiece, double newX, double newY)
         {
             double cellX = (int)((newX) / Width);//переведення в пазликові одиниці
             double cellY = (int)((newY) / Height);            
@@ -330,7 +354,7 @@ namespace PuzzlesProj
             shadowPieces[currentPiece.Index].SetValue(Canvas.LeftProperty, currentPiece.X * Width);
             shadowPieces[currentPiece.Index].SetValue(Canvas.TopProperty, currentPiece.Y * Height);
 
-            return new Point(cellX, cellY);
+            return new System.Windows.Point(cellX, cellY);
         }
                 
         private void SetSelectionRectangle(double x1, double y1, double x2, double y2)
