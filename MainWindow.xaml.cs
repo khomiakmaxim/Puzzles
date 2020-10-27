@@ -9,7 +9,6 @@ using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-
 using Microsoft.Win32;
 using static PuzzlesProj.Piece;
 
@@ -19,8 +18,7 @@ namespace PuzzlesProj
     /// Interaction logic for Window.xaml
     /// </summary>
     public partial class MainWindow : Window
-    {
-        #region attributes
+    {        
         //даний вибір - список всіх кусочків
         Piece currentSelection = null;
         int selectionAngle = 0;
@@ -28,12 +26,12 @@ namespace PuzzlesProj
         List<Piece> shadowPieces = new List<Piece>();
         int columns;//кілкість колонок, на які все розбивається
         int rows;//кількість рядків
-        int Width;
-        int Height;
+        int Width;//ширина пазла
+        int Height;//висота пазла
         double scale = 1.0;//коефіцієнт масштабування
         BitmapImage imageSource;
         string srcFileName = "";
-        DropShadowBitmapEffect shadowEffect;//даний клас дозволяє працювати з тінню
+        DropShadowBitmapEffect shadowEffect;//даний об'єкт дозволяє працювати з тінню
         Point lastCell = new Point(-1, 0);
         ScaleTransform stZoomed = new ScaleTransform//трансформація яка відповідає за вибір пазла
         {   ScaleX = 1.1,
@@ -41,13 +39,10 @@ namespace PuzzlesProj
         };
         
         
-        PngBitmapEncoder png;//encodes png to bmp image            
+        PngBitmapEncoder png;            
         double initialRectangleX = 0;
         double initialRectangleY = 0;
-        Rectangle rectSelection = new Rectangle();
-        #endregion
-
-        #region constructor
+        Rectangle rectSelection = new Rectangle();        
         public MainWindow()
         {
             InitializeComponent();
@@ -68,11 +63,7 @@ namespace PuzzlesProj
                 Softness = 1,
                 Opacity = 0.5
             };
-        }
-        #endregion
-
-
-        #region methods
+        }       
         
         private void CreatePuzzle(Stream streamSource)
         {
@@ -311,7 +302,7 @@ namespace PuzzlesProj
                     where (                            
                             (p.Index != currentSelection.Index) &&//очевидно що їх перевіряти не потрібно
                             (!p.IsSelected) &&                                
-                            (((p.X == cellX) && (p.Y == cellY)) || ((p.Y == cellX) && (p.X == cellY)))                              
+                            (((p.X == cellX) && (p.Y == cellY)))                              
                            )
                     select p;
 
@@ -417,11 +408,7 @@ namespace PuzzlesProj
                 }
                 selectionAngle = 0;
             }
-        }
-
-        #endregion methods
-
-        #region events
+        }        
         
         void piece_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
@@ -671,9 +658,7 @@ namespace PuzzlesProj
         {
             this.Close();           
         }
-
-        #endregion events
-        
+     
         public enum ViewMode
         { 
             Picture,

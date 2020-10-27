@@ -7,10 +7,9 @@ using System.Windows;
 namespace PuzzlesProj
 {    
     public class Piece : Grid
-    {
-        #region attributes
+    {        
         Path path;
-        Path shadowPath;//тінь пазла
+        Path shadowPath;
         string imageUri;
         double initialX;//початкові координати
         double initialY;
@@ -18,18 +17,15 @@ namespace PuzzlesProj
         double y;        
 
         double angle = 0;//кут повороту в градусах        
-        
-        int index = 0;//індекс даного пазлу(зліва направо, зверху вниз)
+                                                
+        int index = 0;//індекс даного пазлу(>, v)
         TranslateTransform tt1;
         TranslateTransform tt2;
         
         TransformGroup tg1 = new TransformGroup();
         TransformGroup tg2 = new TransformGroup();
-
-
-        #endregion
-
-        #region properties
+        
+        
         public string ImageUri { get { return imageUri; } set { imageUri = value; }}
         public double X { get { return x; } set { x = value; } }
         public double Y { get { return y; } set { y = value; } }
@@ -38,13 +34,10 @@ namespace PuzzlesProj
         public double Angle { get { return angle; } set { angle = value; } }
         public int Index { get{return index; } set { index = value; } }
         public bool IsSelected { get; set; }
-        public ScaleTransform ScaleTransform{ get; set; }
-        #endregion
-
-        #region constructor   
+        public ScaleTransform ScaleTransform{ get; set; }        
+        
         public Piece()
-        { 
-            
+        {             
         }
 
         public Piece(ImageSource imageSource, double x, double y, int rows, int columns, bool isShadow, int index, double scale)
@@ -77,8 +70,8 @@ namespace PuzzlesProj
             
             path.Fill = new ImageBrush//пазл замальовуватиметься частинами оригінльного зображення
             {
-                ImageSource = imageSource,//uri картинки
-                Stretch = Stretch.None,//контент зберігає свій початковий розмір                
+                ImageSource = imageSource,
+                Stretch = Stretch.UniformToFill,//контент зберігає свій початковий розмір                
                 //viewport встановлює координати відрисування viewbox'a 
                 Viewport = new Rect(0, 0, Width, Height),
                 ViewportUnits = BrushMappingMode.Absolute,//використовуються одиниці відносно лівого верхнього кута самого пазла
@@ -101,8 +94,8 @@ namespace PuzzlesProj
 
             var rt = new RotateTransform
             { 
-                CenterX = Width/3,
-                CenterY = Height/3,
+                CenterX = 3,
+                CenterY = 3,
                 Angle = 0
             };
 
@@ -111,8 +104,7 @@ namespace PuzzlesProj
                 X = 0,
                 Y = 0
             };                                  
-
-            //в першу transform групу додаємо transform translate i rotation translate
+            
             tg1.Children.Add(tt1);
             tg1.Children.Add(rt);
 
@@ -137,10 +129,7 @@ namespace PuzzlesProj
                 this.Children.Add(shadowPath);
             else
                 this.Children.Add(path);            
-        }
-        #endregion
-
-        #region methods               
+        }                            
 
         public void Rotate(double rotationAngle)
         {                                                                    
@@ -156,18 +145,12 @@ namespace PuzzlesProj
                 angle = 0;
 
             rt1.Angle =
-            rt2.Angle = angle;//власне сама трансформація
-
-            //встановлюємо те, де буде відмальовуватися на полотні даний пазл
-            this.SetValue(Canvas.LeftProperty, this.X * Width);//100x100 - розмір пазла
-            this.SetValue(Canvas.TopProperty, this.Y * Height);
+            rt2.Angle = angle;//власне сама трансформація            
         }
         
         public void ClearImage()
         {
             path.Fill = null;
-        }
-
-        #endregion        
+        }              
     }
 }
