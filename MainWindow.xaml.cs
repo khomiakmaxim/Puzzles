@@ -129,7 +129,44 @@ namespace PuzzlesProj
             return new Tuple<List<List<int>>, List<List<int>>>(UD, LR);
         }
 
-        private void Solve(List<List<int>> LR, List<List<int>> UD, double coeff, int start_chunk = 0)
+        public double min(double a, double b)
+        {
+            return a < b ? a : b;
+        }
+        
+        public Tuple<double, double, double> Max(Tuple<double, double, double> a, Tuple<double, double, double> b)
+        {
+            if (a.Item1 > b.Item1)
+                return a;
+            else if (a.Item1 < b.Item1)
+                return b;
+            else
+            {
+                if (a.Item2 > b.Item2)
+                    return a;
+                else if (a.Item2 < b.Item2)
+                    return b;
+                else
+                {
+                    if (a.Item3 >= b.Item3)
+                        return a;
+                    else
+                        return b;
+                }
+            }
+        }
+
+        public int max(int a, int b)
+        {
+            return a > b ? a : b;
+        }
+
+        public int min(int a, int b)
+        {
+            return a < b ? a : b;
+        }
+
+        private List<int> Solve(List<List<int>> LR, List<List<int>> UD, double coeff, int start_chunk = 0)
         {
             int m = chunks.Count;
 
@@ -208,9 +245,86 @@ namespace PuzzlesProj
                             }
                             maksym.Last().Add(new Tuple<double, int>((double)sm / cnt, ch));
                         }
+
+                        mnCost = min(mnCost, maksym.Last().First().Item1);
+                    }
+
+                    double mid = mnCost * coeff;
+                    Tuple<double, double, double> best = new Tuple<double, double, double>(0, 0, 0);
+                    Tuple<double, double, double> best2 = new Tuple<double, double, double>(0, 0, 0);
+                    for (int x = 0; x < neighbours.Count; ++x)
+                    {
+                        var a = maksym[x];
+                        if (a.Count == 1)
+                        {
+                            double cost = a.First().Item1;
+                            int ch = a.First().Item2;
+
+                            best = new Tuple<double, double, double>(cost, ch, x);
+                        }
+                        else
+                        {
+                            double d = a.ElementAt(1).Item1 - a.First().Item1;
+                            double cost = a.First().Item1;
+                            double ch = a.First().Item2;
+                            if (cost <= mid)
+                            {
+                                best = Max(best, new Tuple<double, double, double>(d, ch, x));
+                            }
+                            best2 = Max(best2, new Tuple<double, double, double>(d, ch, x));
+                        }
+                        if (best == new Tuple<double, double, double>(0, 0, 0))
+                            best = best2;
+                        //best - найкращий варіант для вставки x - індекс серед сусідів
+                        //ch - індекс чанку
+                        var z = neighbours[(int)best.Item3];
+                        int I = z.Item1;
+                        int J = z.Item2;
+                        int bch = (int)best.Item2;
+                        mnI = min(mnI, I);
+                        mxI = max(mxI, I);
+                        mnJ = min(mnJ, J);
+                        mxJ = min(mxJ, J);
+
+                        ans[I][J] = bch;
+                        used[bch] = true;
+                        ++progress;
+
+                        //видалення того сусіда
+                        neighbours.Remove(neighbours.Find(c => c == new Tuple<int, int>(I, J)));
+
+                        foreach(var k in MT)
+                        {
+                            int ni = I + k.Item1;
+                            int nj = J + k.Item2;
+                            if (ni - mnI + 1 > rows || mxI - ni + 1 > rows || nj - mnJ + 1 > columns || mxJ - nj + 1 > columns)
+                                continue;
+                            if (ans[ni][nj] == -1 && neighbours.Where(c => c == new Tuple<int, int>(ni, nj)).Count() == 0)
+                            {
+                                neighbours.Add(new Tuple<int, int>(ni, nj));
+                            }
+                        }
+                    }
+
+                }
+
+
+            }
+
+            List<int> perm = new List<int>(columns * rows);
+
+            for (int i = 0; i < rows * 2; ++i)
+            {
+                for (int j = 0; j < columns * 2; ++j)
+                {
+                    if (ans[i][j] != -1)
+                    {
+                        perm.Add(ans[i][j]);
                     }
                 }
             }
+
+            return perm;
         }
 
         #endregion
