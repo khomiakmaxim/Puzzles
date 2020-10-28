@@ -40,6 +40,7 @@ namespace PuzzlesProj
         };
 
         List<List<List<Pixel>>> chunks = new List<List<List<Pixel>>>();
+        List<int> permResult = new List<int>();
 
 
 
@@ -110,8 +111,8 @@ namespace PuzzlesProj
 
             for (int i = 0; i < m; ++i)
             {
-                UD[i] = new List<int>(m);
-                LR[i] = new List<int>(m);
+                UD.Add(new List<int>(m));
+                LR.Add(new List<int>(m));
             }
 
             for (int i = 0; i < m; ++i)
@@ -120,8 +121,13 @@ namespace PuzzlesProj
                 {
                     if (i != j)
                     {
-                        UD[i][j] = UDCheck(chunks[i], chunks[j]);
-                        LR[i][j] = LRCheck(chunks[i], chunks[j]);
+                        UD[i].Add(UDCheck(chunks[i], chunks[j]));
+                        LR[i].Add(LRCheck(chunks[i], chunks[j]));
+                    }
+                    else
+                    {
+                        UD[i].Add(0);//такий підхід наразі не приведе до помилки
+                        LR[i].Add(0);//
                     }
                 }
             }
@@ -176,45 +182,51 @@ namespace PuzzlesProj
             List<List<int>> ans = new List<List<int>>(rows * 2);
             for (int i = 0; i < rows * 2; ++i)
             {
-                ans[i] = new List<int>(columns * 2);
+                ans.Add(new List<int>(columns * 2));
                 for (int j = 0; j < columns * 2; ++j)
-                    ans[i][j] = -1;
+                    ans[i].Add(-1);
             }
 
-            List<bool> used = new List<bool>(columns * rows);//матриця використаних чанків
+            List<bool> used = new List<bool>(m);
+
+            for (int i = 0; i < m; ++i)
+                used.Add(false);
             used[start_chunk] = true;
             ans[rows - 1][columns - 1] = start_chunk;            
 
+            //усі можливі сусіди першого чанка(верхній, правий, ...)
             List<Tuple<int, int>> neighbours = new List<Tuple<int, int>>();
             List<Tuple<int, int, char>> MT = new List<Tuple<int, int, char>>
             { 
                 new Tuple<int, int, char>(1, 0, 'D'),//той, що знизу від центрального
                 new Tuple<int, int, char>(0, 1, 'R'),//...
                 new Tuple<int, int, char>(-1, 0, 'U'),
-                new Tuple<int, int, char>(1, -1, 'L'),
+                new Tuple<int, int, char>(0, -1, 'L'),
             };
 
             foreach(var i in MT)
-            {
-                neighbours.Add(new Tuple<int, int>(rows - 1 + i.Item1, columns-1+i.Item2));
+            {//виглядає добре
+                neighbours.Add(new Tuple<int, int>(rows - 1 + i.Item1, columns - 1 + i.Item2));
             }
             int progress = 1;
-            while (progress < m)//допоки всі чанки не отримають місце
+            while (progress < m)//допоки всі чанки(пазли) не отримають місце
             {
                 List<SortedSet<Tuple<double, int>>> maksym = new List<SortedSet<Tuple<double, int>>>();//даний список тримє в набір всіх можливих вставок для всіх сусідів
                 List<Tuple<int, int>> good_neighbours = new List<Tuple<int, int>>();
                 foreach (var i in neighbours)
                 {
-                    //розглядатимуться лише ті випадки, коли пазл не порушує констрейнт розміру пазла
-                    if (i.Item1 - mnI + 1 > rows || mxI - i.Item1 + 1 > rows || i.Item2 - mnJ + 1 > columns || mxJ - i.Item2 + 1 > columns)
+                    //розглядатимуться лише ті випадки, коли пазл не порушує констрейнт розміру картинки
+                    if ((i.Item1 - mnI + 1 > rows) || (mxI - i.Item1 + 1 > rows) || (i.Item2 - mnJ + 1 > columns) || (mxJ - i.Item2 + 1 > columns))
                         continue;
                     good_neighbours.Add(i);
                 }
                 neighbours = good_neighbours;
                 double mnCost = 1e18;
+                //розглядаються лише "хороші" місця для вставки
                 foreach(var i in neighbours)
                 {
                     maksym.Add(new SortedSet<Tuple<double, int>>());
+                    //для кожного місця перебираються всі чанки, які можна туди поставити
                     for (int ch = 0; ch < m; ++ch)
                     { 
                         if(used[ch])                        
@@ -228,7 +240,7 @@ namespace PuzzlesProj
                             int nj = i.Item2 + j.Item2;
                             if (ni < 0 || nj < 0 || ni >= rows * 2 || nj >= columns * 2)
                                 continue;
-                            if (ans[ni][nj] != -1)
+                            if (ans[ni][nj] != -1)//якщо сусід сусіда вже має позицію
                             {
                                 long score = 0;
                                 int nc = ans[ni][nj];
@@ -242,84 +254,80 @@ namespace PuzzlesProj
                                     score = LR[nc][ch];
                                 ++cnt;
                                 sm += score;
-                            }
-                            maksym.Last().Add(new Tuple<double, int>((double)sm / cnt, ch));
+                            }                            
                         }
-
-                        mnCost = min(mnCost, maksym.Last().First().Item1);
+                        maksym.Last().Add(new Tuple<double, int>((double)sm / cnt, ch));
                     }
-
-                    double mid = mnCost * coeff;
-                    Tuple<double, double, double> best = new Tuple<double, double, double>(0, 0, 0);
-                    Tuple<double, double, double> best2 = new Tuple<double, double, double>(0, 0, 0);
-                    for (int x = 0; x < neighbours.Count; ++x)
-                    {
-                        var a = maksym[x];
-                        if (a.Count == 1)
-                        {
-                            double cost = a.First().Item1;
-                            int ch = a.First().Item2;
-
-                            best = new Tuple<double, double, double>(cost, ch, x);
-                        }
-                        else
-                        {
-                            double d = a.ElementAt(1).Item1 - a.First().Item1;
-                            double cost = a.First().Item1;
-                            double ch = a.First().Item2;
-                            if (cost <= mid)
-                            {
-                                best = Max(best, new Tuple<double, double, double>(d, ch, x));
-                            }
-                            best2 = Max(best2, new Tuple<double, double, double>(d, ch, x));
-                        }
-                        if (best == new Tuple<double, double, double>(0, 0, 0))
-                            best = best2;
-                        //best - найкращий варіант для вставки x - індекс серед сусідів
-                        //ch - індекс чанку
-                        var z = neighbours[(int)best.Item3];
-                        int I = z.Item1;
-                        int J = z.Item2;
-                        int bch = (int)best.Item2;
-                        mnI = min(mnI, I);
-                        mxI = max(mxI, I);
-                        mnJ = min(mnJ, J);
-                        mxJ = min(mxJ, J);
-
-                        ans[I][J] = bch;
-                        used[bch] = true;
-                        ++progress;
-
-                        //видалення того сусіда
-                        neighbours.Remove(neighbours.Find(c => c == new Tuple<int, int>(I, J)));
-
-                        foreach(var k in MT)
-                        {
-                            int ni = I + k.Item1;
-                            int nj = J + k.Item2;
-                            if (ni - mnI + 1 > rows || mxI - ni + 1 > rows || nj - mnJ + 1 > columns || mxJ - nj + 1 > columns)
-                                continue;
-                            if (ans[ni][nj] == -1 && neighbours.Where(c => c == new Tuple<int, int>(ni, nj)).Count() == 0)
-                            {
-                                neighbours.Add(new Tuple<int, int>(ni, nj));
-                            }
-                        }
-                    }
-
+                    //значення мінімальної вартості вставки оновлюється при потребі
+                    mnCost = min(mnCost, maksym.Last().First().Item1);                    
                 }
+                double mid = mnCost * coeff;
+                Tuple<double, double, double> best = new Tuple<double, double, double>(0, 0, 0);
+                Tuple<double, double, double> best2 = new Tuple<double, double, double>(0, 0, 0);
+                for (int x = 0; x < neighbours.Count; ++x)//ще раз проходимся по всіх можливих місцях вставки
+                {
+                    var a = maksym[x];
+                    if (a.Count == 1)
+                    {
+                        double cost = a.First().Item1;
+                        int ch = a.First().Item2;
 
+                        best = new Tuple<double, double, double>(cost, ch, x);
+                    }
+                    else
+                    {                        
+                        double d = a.ElementAt(1).Item1 - a.First().Item1;
+                        double cost = a.First().Item1;
+                        double ch = a.First().Item2;
+                        if (cost <= mid)//на деяких, не лише на найкращому спрацює
+                        {
+                            best = Max(best, new Tuple<double, double, double>(d, ch, x));
+                        }
+                        best2 = Max(best2, new Tuple<double, double, double>(d, ch, x));
+                    }
+                }
+                if (best == new Tuple<double, double, double>(0, 0, 0))
+                    best = best2;
+                //best - найкращий варіант для вставки x - індекс серед сусідів
+                //ch - індекс чанку
+                var z = neighbours[(int)best.Item3];
+                int I = z.Item1;
+                int J = z.Item2;
+                int bch = (int)best.Item2;
+                mnI = min(mnI, I);
+                mxI = max(mxI, I);
+                mnJ = min(mnJ, J);
+                mxJ = max(mxJ, J);
 
+                ans[I][J] = bch;
+                used[bch] = true;
+                ++progress;
+
+                //видалення того сусіда
+                neighbours.Remove(neighbours.Find(c => c == new Tuple<int, int>(I, J)));
+
+                foreach (var k in MT)
+                {
+                    int ni = I + k.Item1;
+                    int nj = J + k.Item2;
+                    if (ni - mnI + 1 > rows || mxI - ni + 1 > rows || nj - mnJ + 1 > columns || mxJ - nj + 1 > columns)
+                        continue;
+                    if (ans[ni][nj] == -1)
+                    {
+                        neighbours.Add(new Tuple<int, int>(ni, nj));
+                    }
+                }                
             }
-
-            List<int> perm = new List<int>(columns * rows);
+            
+            List<int> perm = new List<int>(m);
 
             for (int i = 0; i < rows * 2; ++i)
             {
                 for (int j = 0; j < columns * 2; ++j)
                 {
-                    if (ans[i][j] != -1)
+                    if (ans[j][i] != -1)
                     {
-                        perm.Add(ans[i][j]);
+                        perm.Add(ans[j][i]);
                     }
                 }
             }
@@ -374,11 +382,7 @@ namespace PuzzlesProj
 
                     chunks.Add(ch);
                 }
-            }
-
-            var shuffled_chunks = chunks.OrderBy(a => Guid.NewGuid()).ToList();
-            //випадковим чином перемішуються чанки
-            MessageBox.Show(LRCheck(shuffled_chunks[0], shuffled_chunks[1]).ToString());
+            }                        
 
             imgShowImage.Source = imageSource;
 
@@ -410,7 +414,18 @@ namespace PuzzlesProj
                     shadowPieces.Add(shadowPiece);
                     index++;               
                 }
-            }                        
+            }            
+
+            var tpl = Precalc(chunks);
+            permResult = Solve(tpl.Item1, tpl.Item2, 1.5);
+
+            var printed = "";
+            //for (int i = 0; i < permResult.Count; ++i)
+            //{
+            //    printed += permResult[i].ToString() + " ";
+            //}
+
+
 
             var shuffledPieces = pieces.OrderBy(i => Guid.NewGuid()).ToList();
             int it = 0;            
@@ -426,7 +441,18 @@ namespace PuzzlesProj
                 p.IsSelected = false;                
 
                 pnlPickUp.Children.Insert(it++, p);//заповнюється wrapPanel                                
-            }            
+            }
+            pieces = shuffledPieces;
+
+            for (int iter = 0; iter < columns * rows; ++iter)
+            {
+                var i = pieces.Where(p => p.Index == permResult[iter]).FirstOrDefault();
+                printed += pieces.IndexOf(i).ToString();
+            }
+
+            MessageBox.Show(printed);
+
+
             
             rectSelection.SetValue(Canvas.ZIndexProperty, 5000);            
             cnvPuzzle.Children.Add(rectSelection);
@@ -600,6 +626,22 @@ namespace PuzzlesProj
             }            
 
             return ret;
+        }
+
+        private void Algorithm()
+        {
+            //cnvPuzzle.Children.Clear();//чистимо всіх з полотна
+            //pnlPickUp.Children.Clear();//нікого не залишиться на панелі вибору
+
+            //int i = 0;
+
+            //for (int x = 0; x < rows; ++x)
+            //{
+            //    for (int y = 0; y < columns; ++y)
+            //    {
+            //        var put = pieces.Where(p => p.Index == i).FirstOrDefault();
+            //    }
+            //}
         }
         
         private System.Windows.Point SetCurrentPiecePosition(Piece currentPiece, double newX, double newY)
