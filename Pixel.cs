@@ -8,9 +8,13 @@ namespace PuzzlesProj
 {
     public class Pixel
     {
-        public int red;
-        public int green;
-        public int blue;
+        private int red;
+        private int green;
+        private int blue;
+
+        public int Red { get { return red; } set { red = value; } }
+        public int Green { get { return green; } set { green = value; } }
+        public int Blue { get { return blue; } set { blue = value; } }
 
         public double GrayScale()
         {

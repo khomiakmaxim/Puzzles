@@ -46,7 +46,7 @@ namespace PuzzlesProj
         PngBitmapEncoder png;            
         double initialRectangleX = 0;
         double initialRectangleY = 0;
-        System.Windows.Shapes.Rectangle rectSelection = new System.Windows.Shapes.Rectangle();        
+        System.Windows.Shapes.Rectangle rectSelection = new System.Windows.Shapes.Rectangle();      
         public MainWindow()
         {
             InitializeComponent();
@@ -67,8 +67,154 @@ namespace PuzzlesProj
                 Softness = 1,
                 Opacity = 0.5
             };
-        }                
-        
+        }
+
+
+        #region solver
+
+        private int LRCheck(List<List<Pixel>> l, List<List<Pixel>> r)
+        {
+            int n = Height;
+            int res = 0;
+
+            for (int i = 0; i < n; ++i)
+            {
+                res += Math.Abs(l[i][Width - 1].Red - r[i][0].Red);                
+                res += Math.Abs(l[i][Width - 1].Green - r[i][0].Green);                
+                res += Math.Abs(l[i][Width - 1].Blue - r[i][0].Blue);                
+            }
+            return res;
+        }
+
+        private int UDCheck(List<List<Pixel>> u, List<List<Pixel>> d)
+        {
+            int n = Width;
+            int res = 0;
+
+            for (int i = 0; i < n; ++i)
+            {
+                res += Math.Abs(u[Height - 1][i].Red - d[0][i].Red);
+                res += Math.Abs(u[Height - 1][i].Green - d[0][i].Green);
+                res += Math.Abs(u[Height - 1][i].Blue - d[0][i].Blue);
+            }
+
+            return res;
+        }
+
+        private Tuple<List<List<int>>, List<List<int>>> Precalc(List<List<List<Pixel>>> chunks)
+        {
+            int m = chunks.Count;
+
+            List<List<int>> UD = new List<List<int>>(m);
+            List<List<int>> LR = new List<List<int>>(m);
+
+            for (int i = 0; i < m; ++i)
+            {
+                UD[i] = new List<int>(m);
+                LR[i] = new List<int>(m);
+            }
+
+            for (int i = 0; i < m; ++i)
+            {
+                for (int j = 0; j < m; ++j)
+                {
+                    if (i != j)
+                    {
+                        UD[i][j] = UDCheck(chunks[i], chunks[j]);
+                        LR[i][j] = LRCheck(chunks[i], chunks[j]);
+                    }
+                }
+            }
+
+            return new Tuple<List<List<int>>, List<List<int>>>(UD, LR);
+        }
+
+        private void Solve(List<List<int>> LR, List<List<int>> UD, double coeff, int start_chunk = 0)
+        {
+            int m = chunks.Count;
+
+            int mnI = rows - 1, mxI = rows - 1;
+            int mnJ = columns - 1, mxJ = columns - 1;
+
+            List<List<int>> ans = new List<List<int>>(rows * 2);
+            for (int i = 0; i < rows * 2; ++i)
+            {
+                ans[i] = new List<int>(columns * 2);
+                for (int j = 0; j < columns * 2; ++j)
+                    ans[i][j] = -1;
+            }
+
+            List<bool> used = new List<bool>(columns * rows);//матриця використаних чанків
+            used[start_chunk] = true;
+            ans[rows - 1][columns - 1] = start_chunk;            
+
+            List<Tuple<int, int>> neighbours = new List<Tuple<int, int>>();
+            List<Tuple<int, int, char>> MT = new List<Tuple<int, int, char>>
+            { 
+                new Tuple<int, int, char>(1, 0, 'D'),//той, що знизу від центрального
+                new Tuple<int, int, char>(0, 1, 'R'),//...
+                new Tuple<int, int, char>(-1, 0, 'U'),
+                new Tuple<int, int, char>(1, -1, 'L'),
+            };
+
+            foreach(var i in MT)
+            {
+                neighbours.Add(new Tuple<int, int>(rows - 1 + i.Item1, columns-1+i.Item2));
+            }
+            int progress = 1;
+            while (progress < m)//допоки всі чанки не отримають місце
+            {
+                List<SortedSet<Tuple<double, int>>> maksym = new List<SortedSet<Tuple<double, int>>>();//даний список тримє в набір всіх можливих вставок для всіх сусідів
+                List<Tuple<int, int>> good_neighbours = new List<Tuple<int, int>>();
+                foreach (var i in neighbours)
+                {
+                    //розглядатимуться лише ті випадки, коли пазл не порушує констрейнт розміру пазла
+                    if (i.Item1 - mnI + 1 > rows || mxI - i.Item1 + 1 > rows || i.Item2 - mnJ + 1 > columns || mxJ - i.Item2 + 1 > columns)
+                        continue;
+                    good_neighbours.Add(i);
+                }
+                neighbours = good_neighbours;
+                double mnCost = 1e18;
+                foreach(var i in neighbours)
+                {
+                    maksym.Add(new SortedSet<Tuple<double, int>>());
+                    for (int ch = 0; ch < m; ++ch)
+                    { 
+                        if(used[ch])                        
+                            continue;
+                        long sm = 0;
+                        int cnt = 0;
+
+                        foreach(var j in MT)
+                        {
+                            int ni = i.Item1 + j.Item1;
+                            int nj = i.Item2 + j.Item2;
+                            if (ni < 0 || nj < 0 || ni >= rows * 2 || nj >= columns * 2)
+                                continue;
+                            if (ans[ni][nj] != -1)
+                            {
+                                long score = 0;
+                                int nc = ans[ni][nj];
+                                if (j.Item3 == 'D')
+                                    score = UD[ch][nc];
+                                if (j.Item3 == 'R')
+                                    score = LR[ch][nc];
+                                if (j.Item3 == 'U')
+                                    score = UD[nc][ch];
+                                if (j.Item3 == 'L')
+                                    score = LR[nc][ch];
+                                ++cnt;
+                                sm += score;
+                            }
+                            maksym.Last().Add(new Tuple<double, int>((double)sm / cnt, ch));
+                        }
+                    }
+                }
+            }
+        }
+
+        #endregion
+
         private void CreatePuzzle(Stream streamSource)
         {
             Random rnd = new Random();                                  
@@ -87,25 +233,27 @@ namespace PuzzlesProj
                 imageSource.Freeze();
             }
 
+            //List<Pixel> - ряд пікселів
+            //List<List<Pixel>> - ряд рядів
             chunks = new List<List<List<Pixel>>>();
             Bitmap alg = BitmapImage2Bitmap(imageSource);
 
-            for (int i = 0; i < columns; ++i)
+            for (int i = 0; i < rows; ++i)
             {
-                for (int j = 0; j < rows; ++j)
+                for (int j = 0; j < columns; ++j)
                 {
-                    List<List<Pixel>> ch = new List<List<Pixel>>(Width);
+                    List<List<Pixel>> ch = new List<List<Pixel>>(Height);
 
-                    for (int x = 0; x < Width; ++x)
+                    for (int x = 0; x < Height; ++x)
                     {
-                        ch.Add(new List<Pixel>(Height));                        
+                        ch.Add(new List<Pixel>(Width));                        
                     }
 
-                    for (int x = 0; x < Width; ++x)
+                    for (int x = 0; x < Height; ++x)
                     {
-                        for (int y = 0; y < Height; ++y)
+                        for (int y = 0; y < Width; ++y)
                         {
-                            System.Drawing.Color clr = alg.GetPixel(i * columns + x, j * rows + y);
+                            System.Drawing.Color clr = alg.GetPixel(j * Width +  y, i * Height + x);
                             ch[x].Add(new Pixel(clr.R, clr.G, clr.B));
                         }
                     }
@@ -114,7 +262,9 @@ namespace PuzzlesProj
                 }
             }
 
-            MessageBox.Show(chunks[0][70][70].ToString());
+            var shuffled_chunks = chunks.OrderBy(a => Guid.NewGuid()).ToList();
+            //випадковим чином перемішуються чанки
+            MessageBox.Show(LRCheck(shuffled_chunks[0], shuffled_chunks[1]).ToString());
 
             imgShowImage.Source = imageSource;
 
