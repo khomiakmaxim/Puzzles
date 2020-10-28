@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace PuzzlesProj
 {
+    //даний клас відповідає за кожний окремий піксель зображення
     public class Pixel
     {
         private int red;
@@ -14,15 +15,11 @@ namespace PuzzlesProj
 
         public int Red { get { return red; } set { red = value; } }
         public int Green { get { return green; } set { green = value; } }
-        public int Blue { get { return blue; } set { blue = value; } }
-
-        public double GrayScale()
-        {
-            return (0.3 * red) + (0.59 * green) + (0.11 * blue);
-        }
+        public int Blue { get { return blue; } set { blue = value; } }        
 
         public Pixel()
-        { }
+        {
+        }
 
         public Pixel(int red = 0, int green = 0, int blue = 0)
         {

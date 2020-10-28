@@ -20,58 +20,56 @@ namespace PuzzlesProj
     /// </summary>
     public partial class MainWindow : Window
     {        
-        //даний вибір - список всіх кусочків
+        //шматок пазла, який на даний момент в руці
         Piece currentSelection = null;
         int selectionAngle = 0;
         List<Piece> pieces = new List<Piece>();
         List<Piece> shadowPieces = new List<Piece>();
         int columns;//кілкість колонок, на які все розбивається
         int rows;//кількість рядків
-        int Width;//ширина пазла
-        int Height;//висота пазла
+        int Width;
+        int Height;
         double scale = 1.0;//коефіцієнт масштабування
         BitmapImage imageSource;
         string srcFileName = "";
         DropShadowBitmapEffect shadowEffect;//даний об'єкт дозволяє працювати з тінню
         System.Windows.Point lastCell = new System.Windows.Point(-1, 0);
-        ScaleTransform stZoomed = new ScaleTransform//трансформація яка відповідає за вибір пазла
+        ScaleTransform stZoomed = new ScaleTransform//масштабування при виборі конкретного пазлу
         {   ScaleX = 1.1,
-            ScaleY = 1.1 
+            ScaleY = 1.1
         };
 
+        //матриця пікселів для алгоритму
         List<List<List<Pixel>>> chunks = new List<List<List<Pixel>>>();
+        //перестановка, згенерована алгоритмом
         List<int> permResult = new List<int>();
 
-
-
-        PngBitmapEncoder png;            
+        PngBitmapEncoder png;
         double initialRectangleX = 0;
         double initialRectangleY = 0;
-        System.Windows.Shapes.Rectangle rectSelection = new System.Windows.Shapes.Rectangle();      
+        System.Windows.Shapes.Rectangle rectSelection = new System.Windows.Shapes.Rectangle();
         public MainWindow()
         {
             InitializeComponent();
                         
             cnvPuzzle.MouseLeftButtonUp += new MouseButtonEventHandler(cnvPuzzle_MouseLeftButtonUp);
             cnvPuzzle.MouseDown += new MouseButtonEventHandler(cnvPuzzle_MouseDown);
-            cnvPuzzle.MouseMove += new MouseEventHandler(cnvPuzzle_MouseMove);
-            cnvPuzzle.MouseWheel += new MouseWheelEventHandler(cnvPuzzle_MouseWheel);
+            cnvPuzzle.MouseMove += new MouseEventHandler(cnvPuzzle_MouseMove);            
             cnvPuzzle.MouseEnter += new MouseEventHandler(cnvPuzzle_MouseEnter);
-            cnvPuzzle.MouseLeave += new MouseEventHandler(cnvPuzzle_MouseLeave);            
-            
+            cnvPuzzle.MouseLeave += new MouseEventHandler(cnvPuzzle_MouseLeave);                        
             
             shadowEffect = new DropShadowBitmapEffect()
             {
                 Color = Colors.Black,
-                Direction = 310,//встановлює кут, по якому тінь проектується
-                ShadowDepth = 25,//встановлює відстань між пазлом і його тінню
+                Direction = 310,//кут, по якому тінь проектується
+                ShadowDepth = 25,//відстань між пазлом і його тінню
                 Softness = 1,
                 Opacity = 0.5
             };
         }
 
 
-        #region solver
+        #region algorithm
 
         private int LRCheck(List<List<Pixel>> l, List<List<Pixel>> r)
         {
@@ -126,18 +124,13 @@ namespace PuzzlesProj
                     }
                     else
                     {
-                        UD[i].Add(0);//такий підхід наразі не приведе до помилки
-                        LR[i].Add(0);//
+                        UD[i].Add(0);
+                        LR[i].Add(0);
                     }
                 }
             }
 
             return new Tuple<List<List<int>>, List<List<int>>>(UD, LR);
-        }
-
-        public double min(double a, double b)
-        {
-            return a < b ? a : b;
         }
         
         public Tuple<double, double, double> Max(Tuple<double, double, double> a, Tuple<double, double, double> b)
@@ -161,25 +154,16 @@ namespace PuzzlesProj
                 }
             }
         }
-
-        public int max(int a, int b)
-        {
-            return a > b ? a : b;
-        }
-
-        public int min(int a, int b)
-        {
-            return a < b ? a : b;
-        }
-
+        
+        
         private List<int> Solve(List<List<int>> LR, List<List<int>> UD, double coeff, int start_chunk = 0)
         {
             int m = chunks.Count;
 
-            int mnI = rows - 1, mxI = rows - 1;
+            int mnI = rows - 1, mxI = rows - 1;//допустимі границі
             int mnJ = columns - 1, mxJ = columns - 1;
 
-            List<List<int>> ans = new List<List<int>>(rows * 2);
+            List<List<int>> ans = new List<List<int>>(rows * 2);//прямокутний пазл, розміри якого вдвічі більші за той, що потрібно зібрати
             for (int i = 0; i < rows * 2; ++i)
             {
                 ans.Add(new List<int>(columns * 2));
@@ -205,13 +189,13 @@ namespace PuzzlesProj
             };
 
             foreach(var i in MT)
-            {//виглядає добре
+            {
                 neighbours.Add(new Tuple<int, int>(rows - 1 + i.Item1, columns - 1 + i.Item2));
             }
             int progress = 1;
-            while (progress < m)//допоки всі чанки(пазли) не отримають місце
+            while (progress < m)
             {
-                List<SortedSet<Tuple<double, int>>> maksym = new List<SortedSet<Tuple<double, int>>>();//даний список тримє в набір всіх можливих вставок для всіх сусідів
+                List<SortedSet<Tuple<double, int>>> maksym = new List<SortedSet<Tuple<double, int>>>();//даний список тримє в набір всіх можливих вставок для всіх кандидатів
                 List<Tuple<int, int>> good_neighbours = new List<Tuple<int, int>>();
                 foreach (var i in neighbours)
                 {
@@ -221,8 +205,8 @@ namespace PuzzlesProj
                     good_neighbours.Add(i);
                 }
                 neighbours = good_neighbours;
-                double mnCost = 1e18;
-                //розглядаються лише "хороші" місця для вставки
+                double mnCost = 1e15;
+                //розглядаються лише доступні конкуренти для вставки
                 foreach(var i in neighbours)
                 {
                     maksym.Add(new SortedSet<Tuple<double, int>>());
@@ -259,12 +243,12 @@ namespace PuzzlesProj
                         maksym.Last().Add(new Tuple<double, int>((double)sm / cnt, ch));
                     }
                     //значення мінімальної вартості вставки оновлюється при потребі
-                    mnCost = min(mnCost, maksym.Last().First().Item1);                    
+                    mnCost = Math.Min(mnCost, maksym.Last().First().Item1);                    
                 }
-                double mid = mnCost * coeff;
+                double mid = mnCost * coeff;//оптимізаційний момент
                 Tuple<double, double, double> best = new Tuple<double, double, double>(0, 0, 0);
                 Tuple<double, double, double> best2 = new Tuple<double, double, double>(0, 0, 0);
-                for (int x = 0; x < neighbours.Count; ++x)//ще раз проходимся по всіх можливих місцях вставки
+                for (int x = 0; x < neighbours.Count; ++x)
                 {
                     var a = maksym[x];
                     if (a.Count == 1)
@@ -288,22 +272,24 @@ namespace PuzzlesProj
                 }
                 if (best == new Tuple<double, double, double>(0, 0, 0))
                     best = best2;
-                //best - найкращий варіант для вставки x - індекс серед сусідів
+                //best - жадібно найкращий варіант для вставки, x - індекс серед сусідів
                 //ch - індекс чанку
                 var z = neighbours[(int)best.Item3];
                 int I = z.Item1;
                 int J = z.Item2;
                 int bch = (int)best.Item2;
-                mnI = min(mnI, I);
-                mxI = max(mxI, I);
-                mnJ = min(mnJ, J);
-                mxJ = max(mxJ, J);
+
+                //допустимі границі мають бути перерахованими
+                mnI = Math.Min(mnI, I);
+                mxI = Math.Max(mxI, I);
+                mnJ = Math.Min(mnJ, J);
+                mxJ = Math.Max(mxJ, J);
 
                 ans[I][J] = bch;
                 used[bch] = true;
                 ++progress;
 
-                //видалення того сусіда
+                //видалення вставленого кандидата з списку
                 neighbours.Remove(neighbours.Find(c => c == new Tuple<int, int>(I, J)));
 
                 foreach (var k in MT)
@@ -314,13 +300,14 @@ namespace PuzzlesProj
                         continue;
                     if (ans[ni][nj] == -1)
                     {
+                        //добавлення нового кандидата до списку
                         neighbours.Add(new Tuple<int, int>(ni, nj));
                     }
                 }                
             }
             
+            //відповідна перестановка
             List<int> perm = new List<int>(m);
-
             for (int i = 0; i < rows * 2; ++i)
             {
                 for (int j = 0; j < columns * 2; ++j)
@@ -332,7 +319,17 @@ namespace PuzzlesProj
                 }
             }
 
-            return perm;
+            var aperm = perm.OrderBy(i => i).ToList();
+            for (int i = 0; i < aperm.Count; ++i)
+            {
+                if (aperm[i] != i)
+                {
+                    perm.Add(i);
+                    break;
+                }
+            }
+
+            return perm;//вихідна готова перестановка
         }
 
         #endregion
@@ -342,9 +339,7 @@ namespace PuzzlesProj
             Random rnd = new Random();                                  
             png = null;            
             
-
-            imageSource = null;            
-            
+            imageSource = null;                        
             using (BinaryReader reader = new BinaryReader(streamSource))
             {
                 imageSource = new BitmapImage();
@@ -444,6 +439,7 @@ namespace PuzzlesProj
             }
             pieces = shuffledPieces;
 
+            //одного не вистачає
             for (int iter = 0; iter < columns * rows; ++iter)
             {
                 var i = pieces.Where(p => p.Index == permResult[iter]).FirstOrDefault();
@@ -471,7 +467,7 @@ namespace PuzzlesProj
             }
         }
 
-        //скидання всіх можливих прив'язок(потірбне при створенні нового пазлу)
+        //скидання всіх можливих прив'язок, потірбне при створенні нового пазлу
         private void DestroyReferences()
         {
             for (var i = cnvPuzzle.Children.Count - 1; i >= 0; i--)
@@ -513,18 +509,16 @@ namespace PuzzlesProj
             imgShowImage.Source = null;
             imageSource = null;
         }
-        
-        //
+                
         private Stream LoadImage(string srcFileName)
-        {
-            //передається назва файлу в системі
+        {            
             imageSource = new BitmapImage(new Uri(srcFileName));
 
             this.Width = (int)imageSource.Width / columns;
             this.Height = (int)imageSource.Height / rows;
-            //створюємо якесь нове зображення(копія старого)
+            //копія попереднього
             var bi = new BitmapImage(new Uri(srcFileName));
-            //створюємо нову кисть, яка буде замальовувати пазли нашим зображенням
+            //кисть якою замальовується пазл
             var imgBrush = new ImageBrush(bi);
             
             imgBrush.AlignmentX = AlignmentX.Left;
@@ -542,6 +536,7 @@ namespace PuzzlesProj
             rectImage.Fill = imgBrush;
             rectImage.Arrange(new Rect(0, 0, imageSource.PixelWidth, imageSource.PixelHeight));
 
+            //"ореол" довкола пазла
             rectImage.Margin = new Thickness(
                 (columns * Width - imageSource.PixelWidth) / 2,
                 (rows * Height - imageSource.PixelHeight) / 2,
@@ -554,7 +549,6 @@ namespace PuzzlesProj
             png.Frames.Add(BitmapFrame.Create(rtb));
 
             Stream ret = new MemoryStream();
-
             png.Save(ret);
 
             return ret;
@@ -628,25 +622,10 @@ namespace PuzzlesProj
             return ret;
         }
 
-        private void Algorithm()
-        {
-            //cnvPuzzle.Children.Clear();//чистимо всіх з полотна
-            //pnlPickUp.Children.Clear();//нікого не залишиться на панелі вибору
-
-            //int i = 0;
-
-            //for (int x = 0; x < rows; ++x)
-            //{
-            //    for (int y = 0; y < columns; ++y)
-            //    {
-            //        var put = pieces.Where(p => p.Index == i).FirstOrDefault();
-            //    }
-            //}
-        }
-        
+        //проблема з перевернутим пазлом
         private System.Windows.Point SetCurrentPiecePosition(Piece currentPiece, double newX, double newY)
         {
-            double cellX = (int)((newX) / Width);//переведення в пазликові одиниці
+            double cellX = (int)((newX) / Width);
             double cellY = (int)((newY) / Height);            
 
             currentPiece.X = cellX;//переписуємо позиціонування пазла
@@ -656,7 +635,7 @@ namespace PuzzlesProj
             currentPiece.SetValue(Canvas.LeftProperty, currentPiece.X * Width);
             currentPiece.SetValue(Canvas.TopProperty, currentPiece.Y * Height);
 
-            //робимо це ж саме з тіневим елементом(він ставиться туди ж)
+            //цей ставиться туди ж
             shadowPieces[currentPiece.Index].SetValue(Canvas.LeftProperty, currentPiece.X * Width);
             shadowPieces[currentPiece.Index].SetValue(Canvas.TopProperty, currentPiece.Y * Height);
 
@@ -678,7 +657,8 @@ namespace PuzzlesProj
             rectSelection.SetValue(Canvas.LeftProperty, x);
             rectSelection.SetValue(Canvas.TopProperty, y);
         }
-                
+             
+        //extendable
         private void MouseUp()
         {
             if (currentSelection == null)
@@ -687,7 +667,7 @@ namespace PuzzlesProj
                 double y1 = (double)rectSelection.GetValue(Canvas.TopProperty);
                 double x2 = x1 + rectSelection.Width;
                 double y2 = y1 + rectSelection.Height;
-
+                
                 int cellX1 = (int)(x1 / Width);
                 int cellY1 = (int)(y1 / Height);
                 int cellX2 = (int)(x2 / Width);
@@ -707,7 +687,7 @@ namespace PuzzlesProj
                     shadowPieces[currentPiece.Index].SetValue(Canvas.ZIndexProperty, 4999);
                     currentPiece.BitmapEffect = shadowEffect;
 
-                    currentPiece.RenderTransform = stZoomed;//зум даного пазла
+                    currentPiece.RenderTransform = stZoomed;
                     currentPiece.IsSelected = true;
                     shadowPieces[currentPiece.Index].RenderTransform = stZoomed;
                 }
@@ -740,6 +720,7 @@ namespace PuzzlesProj
             }
         }        
         
+        //якщо пазл в руці, то відбудеться його поворот
         void piece_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (currentSelection != null)
@@ -768,25 +749,23 @@ namespace PuzzlesProj
                     var tt = new TranslateTransform() { X = -1, Y = -1 };
                     p.ScaleTransform.ScaleX = 1.0;
                     p.ScaleTransform.ScaleY = 1.0;
-                    p.RenderTransform = tt;
-                    //p.X = -1;
-                    //p.Y = -1;
+                    p.RenderTransform = tt;                    
                     p.IsSelected = false;
                     p.SetValue(Canvas.ZIndexProperty, 0);
                     p.BitmapEffect = null;
                     p.Visibility = Visibility.Visible;
-                    pnlPickUp.Children.Add(p);//додаємо його в панель пікапу
+                    pnlPickUp.Children.Add(p);
 
                     currentSelection = null;
                 }
                 else//якщо в руці пазла немає, то кладемо в неї пазл, на який наведена мишка
                 {
-                    pnlPickUp.Children.Remove(chosenPiece);//видаляємо його з панелі
-                    cnvPuzzle.Children.Add(shadowPieces[chosenPiece.Index]);
+                    pnlPickUp.Children.Remove(chosenPiece);//видалення з панелі вибору
+                    cnvPuzzle.Children.Add(shadowPieces[chosenPiece.Index]);//додавання на полотно
                     chosenPiece.SetValue(Canvas.ZIndexProperty, 5000);
                     shadowPieces[chosenPiece.Index].SetValue(Canvas.ZIndexProperty, 4999);
                     chosenPiece.BitmapEffect = shadowEffect;
-                    chosenPiece.RenderTransform = stZoomed;//збільшуємо зображення
+                    chosenPiece.RenderTransform = stZoomed;
                     shadowPieces[chosenPiece.Index].RenderTransform = stZoomed;
                     cnvPuzzle.Children.Add(chosenPiece);
                     chosenPiece.Visibility = Visibility.Hidden;
@@ -811,12 +790,7 @@ namespace PuzzlesProj
                     shadowPieces[currentSelection.Index].Visibility = Visibility.Visible;
                 
             }
-        }
-        
-        void cnvPuzzle_MouseWheel(object sender, MouseWheelEventArgs e)
-        {
-
-        }
+        }                
         
         void cnvPuzzle_MouseDown(object sender, MouseButtonEventArgs e)
         {
@@ -833,10 +807,7 @@ namespace PuzzlesProj
         private void MouseMoving()
         {
             var newX = Mouse.GetPosition((IInputElement)cnvPuzzle).X;
-            var newY = Mouse.GetPosition((IInputElement)cnvPuzzle).Y;
-
-            int cellX = (int)((newX) / Width);
-            int cellY = (int)((newY) / Height);
+            var newY = Mouse.GetPosition((IInputElement)cnvPuzzle).Y;           
 
             if (Mouse.LeftButton == MouseButtonState.Pressed)
             {

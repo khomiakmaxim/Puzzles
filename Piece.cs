@@ -5,27 +5,27 @@ using System.Windows.Media;
 using System.Windows;
 
 namespace PuzzlesProj
-{    
+{   
+    //даний клас описує кожний окремий пазл зображення
     public class Piece : Grid
     {        
         Path path;
         Path shadowPath;
         string imageUri;
-        double initialX;//початкові координати
+        double initialX;
         double initialY;
-        double x;//координати відповідно до положення на сітці
+        double x;
         double y;        
-
-        double angle = 0;//кут повороту в градусах        
-                                                
+        double angle = 0;//кут повороту в градусах                                                        
         int index = 0;//індекс даного пазлу(>, v)
+
+        //для різного роду трансформацій
         TranslateTransform tt1;
-        TranslateTransform tt2;
-        
+        TranslateTransform tt2;        
         TransformGroup tg1 = new TransformGroup();
         TransformGroup tg2 = new TransformGroup();
-        
-        
+
+        #region properties
         public string ImageUri { get { return imageUri; } set { imageUri = value; }}
         public double X { get { return x; } set { x = value; } }
         public double Y { get { return y; } set { y = value; } }
@@ -34,8 +34,9 @@ namespace PuzzlesProj
         public double Angle { get { return angle; } set { angle = value; } }
         public int Index { get{return index; } set { index = value; } }
         public bool IsSelected { get; set; }
-        public ScaleTransform ScaleTransform{ get; set; }        
-        
+        public ScaleTransform ScaleTransform{ get; set; }
+        #endregion properties
+
         public Piece()
         {             
         }
@@ -58,8 +59,7 @@ namespace PuzzlesProj
             {
                 Stroke = new SolidColorBrush(Colors.Gray),
                 StrokeThickness = 0
-            };
-            
+            };            
             shadowPath = new Path
             {
                 Stroke = new SolidColorBrush(Colors.Black),
@@ -71,11 +71,11 @@ namespace PuzzlesProj
             path.Fill = new ImageBrush//пазл замальовуватиметься частинами оригінльного зображення
             {
                 ImageSource = imageSource,
-                Stretch = Stretch.UniformToFill,//контент зберігає свій початковий розмір                
+                Stretch = Stretch.UniformToFill,               
                 //viewport встановлює координати відрисування viewbox'a 
                 Viewport = new Rect(0, 0, Width, Height),
-                ViewportUnits = BrushMappingMode.Absolute,//використовуються одиниці відносно лівого верхнього кута самого пазла
-                Viewbox = new Rect(//в залежності від того, що за пазл вирізається, ми даємо йому вигляд замальовки
+                ViewportUnits = BrushMappingMode.Absolute,
+                Viewbox = new Rect(//в залежності від того, що за пазл вирізається, йому надається вигляд замальовки
                     x * Width,
                     y * Height,
                     Width,
@@ -86,10 +86,8 @@ namespace PuzzlesProj
                        
 
             GeometryGroup gg = new GeometryGroup();
-            gg.Children.Add(new RectangleGeometry(new Rect(0, 0, Width, Height)));        
-            
-            //path.Data визначає об'єкт Geometry - геометричний об'єкт для відмальовки
-            path.Data = gg;//частинка буде відмальованою у прямокутному вигляді
+            gg.Children.Add(new RectangleGeometry(new Rect(0, 0, Width, Height)));                                
+            path.Data = gg;
             shadowPath.Data = gg;
 
             var rt = new RotateTransform
@@ -101,8 +99,8 @@ namespace PuzzlesProj
 
             tt1 = new TranslateTransform
             { 
-                X = 0,
-                Y = 0
+                X = -1,
+                Y = -1
             };                                  
             
             tg1.Children.Add(tt1);
@@ -112,8 +110,8 @@ namespace PuzzlesProj
 
             tt2 = new TranslateTransform()
             {
-                X = 0,
-                Y = 0
+                X = -1,
+                Y = -1
             };
 
             tg2.Children.Add(tt2);
@@ -145,7 +143,7 @@ namespace PuzzlesProj
                 angle = 0;
 
             rt1.Angle =
-            rt2.Angle = angle;//власне сама трансформація            
+            rt2.Angle = angle;//власне сама трансформація повороту            
         }
         
         public void ClearImage()

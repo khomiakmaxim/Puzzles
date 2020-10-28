@@ -70,7 +70,7 @@
                             <RowDefinition Height="24"/>
                         </Grid.RowDefinitions>
                         <Image Grid.Row="0" Source="Images/ShowImage.png"/>
-                        <TextBlock Grid.Row="1" Name="txtShowImage" FontSize="12" Text="Show Image"/>
+                        <TextBlock Grid.Row="1" Name="txtShowImage" FontSize="12" Text=" Show Image"/>
                     </Grid>
                 </Button>
                 <Button Name="btnShowPuzzle" Width="100" HorizontalAlignment="Center" Margin="10" Click="btnShowPuzzle_Click" Visibility="Collapsed">
@@ -97,12 +97,12 @@
                         </Grid>
                     </StackPanel>
                 </StackPanel>
-                <TextBlock Margin="5,2,48,2" Text="Columns" 
-                   Foreground="LightSteelBlue"/>
-                <TextBox MinWidth="50" Name="txtColumns" Background="White" Margin="0,0,40,0" />
                 <TextBlock Margin="5,2,48,2" Text="Rows" 
                    Foreground="LightSteelBlue"/>
                 <TextBox MinWidth="50" Name="txtRows" Background="white" Margin="0,0,40,0" />
+                <TextBlock Margin="5,2,48,2" Text="Columns" 
+                   Foreground="LightSteelBlue"/>
+                <TextBox MinWidth="50" Name="txtColumns" Background="White" Margin="0,0,40,0" />
             </StackPanel>
             <!--Площина, на якій збирається пазл разом з панеллю для вибору елементів-->
             <Grid Name="grdPuzzle" Grid.Row="1" Grid.Column="1" MouseEnter="DockPanel_MouseEnter" Grid.RowSpan="2">
@@ -114,9 +114,9 @@
                 </Grid.RowDefinitions>
                 <!--На цьому візуальному елементі відображатиметься або пазл, або повна картинка-->
                 <ScrollViewer Grid.Row="0" Name="scvPuzzle" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" HorizontalAlignment="Left" VerticalAlignment="Top"  Visibility="Visible">
-                    <Grid Background="White">
+                    <Grid>
                         <!---Полотно, на якому збиратиметься пазл -->
-                        <Canvas Name="cnvPuzzle" Margin="20" HorizontalAlignment="Left" VerticalAlignment="Top" Width="2000" Height="2000">
+                        <Canvas Name="cnvPuzzle" Margin="0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="2000" Height="2000">
                             <Canvas.RenderTransform>
                                 <!--Використовується DependencyProperties з zoomSlider-->
                                 <ScaleTransform
