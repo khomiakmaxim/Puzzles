@@ -308,9 +308,9 @@ namespace PuzzlesProj
             
             //відповідна перестановка
             List<int> perm = new List<int>(m);
-            for (int i = 0; i < rows * 2; ++i)
+            for (int i = 0; i < columns*2; ++i)
             {
-                for (int j = 0; j < columns * 2; ++j)
+                for (int j = 0; j < rows*2; ++j)
                 {
                     if (ans[j][i] != -1)
                     {
@@ -318,14 +318,18 @@ namespace PuzzlesProj
                     }
                 }
             }
+            
+            List<int> fullPerm = perm.OrderBy(i => i).ToList();
 
-            var aperm = perm.OrderBy(i => i).ToList();
-            for (int i = 0; i < aperm.Count; ++i)
+            List<int> actual = new List<int>(m);
+            for (int x = 0; x < m; ++x) actual.Add(x);
+
+            for (int x = 0; x < m; ++x)
             {
-                if (aperm[i] != i)
+                if (x >= fullPerm.Count || fullPerm[x] != actual[x])
                 {
-                    perm.Add(i);
-                    break;
+                    fullPerm.Insert(x, actual[x]);
+                    perm.Add(actual[x]);
                 }
             }
 
@@ -336,6 +340,7 @@ namespace PuzzlesProj
 
         private void CreatePuzzle(Stream streamSource)
         {
+            zoomSlider.Value = 0.50;
             Random rnd = new Random();                                  
             png = null;            
             
@@ -412,15 +417,7 @@ namespace PuzzlesProj
             }            
 
             var tpl = Precalc(chunks);
-            permResult = Solve(tpl.Item1, tpl.Item2, 1.5);
-
-            var printed = "";
-            //for (int i = 0; i < permResult.Count; ++i)
-            //{
-            //    printed += permResult[i].ToString() + " ";
-            //}
-
-
+            permResult = Solve(tpl.Item1, tpl.Item2, 1.5);                    
 
             var shuffledPieces = pieces.OrderBy(i => Guid.NewGuid()).ToList();
             int it = 0;            
@@ -438,20 +435,46 @@ namespace PuzzlesProj
                 pnlPickUp.Children.Insert(it++, p);//заповнюється wrapPanel                                
             }
             pieces = shuffledPieces;
-
-            //одного не вистачає
+            List<int> actualPerm = new List<int>(columns * rows);
             for (int iter = 0; iter < columns * rows; ++iter)
             {
                 var i = pieces.Where(p => p.Index == permResult[iter]).FirstOrDefault();
-                printed += pieces.IndexOf(i).ToString();
+                actualPerm.Add(pieces.IndexOf(i));
             }
 
-            MessageBox.Show(printed);
-
-
+            permResult = actualPerm;
             
             rectSelection.SetValue(Canvas.ZIndexProperty, 5000);            
             cnvPuzzle.Children.Add(rectSelection);
+
+            //SetAll();
+        }
+
+        private void SetAll()
+        {
+            int it = 0;
+
+            for (int i = 0; i < rows; ++i)
+            {
+                for (int j = 0; j < columns; ++j)
+                {
+                    var p = pieces.ElementAt(permResult[it++]);
+                    pnlPickUp.Children.Remove(p);
+                    cnvPuzzle.Children.Add(p);
+                    SetCurrentPiecePosition(p,this.Width * (j + 1), this.Height * (i + 1));
+
+                    if (IsPuzzleCompleted())
+                    {
+                        allGood.Text = "Complited";
+                        allGood.Foreground = System.Windows.Media.Brushes.DarkRed;
+                    }
+                    else
+                    {
+                        allGood.Text = "Not Complited";
+                        allGood.Foreground = System.Windows.Media.Brushes.Black;
+                    }
+                }
+            }
         }
 
         private Bitmap BitmapImage2Bitmap(BitmapImage bitmapImage)
@@ -713,7 +736,13 @@ namespace PuzzlesProj
 
                     if (IsPuzzleCompleted())//кожен раз, коли відпускаємо руку з пазлом, перевіряємо, чи пазл зібраний
                     {
-                        var result = MessageBox.Show("Пазл складено!", "Puzzle Completed", MessageBoxButton.OK, MessageBoxImage.Information);                        
+                        allGood.Text = "Complited";
+                        allGood.Foreground = System.Windows.Media.Brushes.DarkRed;
+                    }
+                    else
+                    {
+                        allGood.Text = "Not Complited";
+                        allGood.Foreground = System.Windows.Media.Brushes.Black;
                     }
                 }
                 selectionAngle = 0;
@@ -736,6 +765,7 @@ namespace PuzzlesProj
         
         void piece_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
+            alg.IsEnabled = false;
             var chosenPiece = (Piece)sender;
 
             if (chosenPiece.Parent is WrapPanel)
@@ -778,6 +808,7 @@ namespace PuzzlesProj
         
         void cnvPuzzle_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
+            alg.IsEnabled = false;
             MouseUp();
         }
         
@@ -900,6 +931,8 @@ namespace PuzzlesProj
                     MessageBox.Show(exc.ToString());
                 }
             }
+
+            alg.IsEnabled = true;
         }
         
         private void btnShowImage_Click(object sender, RoutedEventArgs e)
@@ -916,48 +949,19 @@ namespace PuzzlesProj
             scvImage.Visibility = Visibility.Hidden;            
             btnShowImage.Visibility = Visibility.Visible;
             btnShowPuzzle.Visibility = Visibility.Collapsed;
-        }
-        
-        private void grdTop_MouseEnter(object sender, MouseEventArgs e)
+        }                                                                  
+
+        private void algButton_Click(object sender, RoutedEventArgs e)
         {
-            this.WindowStyle = WindowStyle.ThreeDBorderWindow;
-            grdWindow.RowDefinitions[0].Height = new GridLength(0);
-        }
-        
-        private void StackPanel_MouseEnter(object sender, MouseEventArgs e)
-        {
-            this.WindowStyle = WindowStyle.None;
-            grdWindow.RowDefinitions[0].Height = new GridLength(32);
-        }
-        
-        private void DockPanel_MouseEnter(object sender, MouseEventArgs e)
-        {
-            this.WindowStyle = WindowStyle.None;
-            grdWindow.RowDefinitions[0].Height = new GridLength(32);
-        }                
-        
-        private void txtMinimize_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            this.WindowState = WindowState.Minimized;
-        }
-        
-        private void txtMaximize_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            if (txtMaximize.Text == "1")
+            if (this.imageSource == null)
             {
-                txtMaximize.Text = "2";
-                this.WindowState = WindowState.Maximized;
+                MessageBox.Show("Add some image first");
             }
             else
             {
-                txtMaximize.Text = "1";
-                this.WindowState = WindowState.Normal;
+                alg.IsEnabled = false;
+                SetAll();
             }
-        }
-        
-        private void txtClose_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            this.Close();           
         }
      
         public enum ViewMode

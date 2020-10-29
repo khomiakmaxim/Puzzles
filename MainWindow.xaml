@@ -39,20 +39,14 @@
                 <ScaleTransform ScaleX="1.0" ScaleY="1.0"/>
             </Grid.RenderTransform>
             <!--Верхня частина(там де іконки)-->
-            <Grid Name="grdTop" Grid.Row="0" Grid.ColumnSpan="2" Margin="5" MouseEnter="grdTop_MouseEnter" HorizontalAlignment="Stretch">
+            <Grid Name="grdTop" Grid.Row="0" Grid.ColumnSpan="2" Margin="5" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
-                    <ColumnDefinition Width="24"/>
-                    <ColumnDefinition Width="24"/>
-                    <ColumnDefinition Width="24"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" FontSize="18" Foreground="BlanchedAlmond" MouseLeftButtonUp="txtMinimize_MouseLeftButtonUp">Puzzles Project</TextBlock>
-                <TextBlock Grid.Column="1" Name="txtMinimize" FontFamily="Webdings" FontSize="20" Foreground="white" MouseLeftButtonUp="txtMinimize_MouseLeftButtonUp">0</TextBlock>
-                <TextBlock Grid.Column="2"  Name="txtMaximize" FontFamily="Webdings" FontSize="20" Foreground="White" MouseLeftButtonUp="txtMaximize_MouseLeftButtonUp">1</TextBlock>
-                <TextBlock Grid.Column="3"  Name="txtClose" FontFamily="Webdings" FontSize="20" Foreground="White" MouseLeftButtonUp="txtClose_MouseLeftButtonUp">r</TextBlock>
-            </Grid>
+                <TextBlock Name="allGood" Grid.Column="0" FontSize="18" Foreground="Black">Not Complited</TextBlock>
+                </Grid>
             <!--Найлівіша бокова панель-->
-            <StackPanel Name="stackPanel" Grid.Row="1" Width="100" HorizontalAlignment="Left" VerticalAlignment="Stretch" Background="Transparent" MouseEnter="StackPanel_MouseEnter" Grid.RowSpan="2">
+            <StackPanel Name="stackPanel" Grid.Row="1" Width="100" HorizontalAlignment="Left" VerticalAlignment="Stretch" Background="Transparent" Grid.RowSpan="2">
                 <Button Name="btnNewPuzzle" Width="100" HorizontalAlignment="Center" Margin="10" Click="btnNewPuzzle_Click">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -87,7 +81,7 @@
                 <!--Stack Panel для слайдера-->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Zoom" HorizontalAlignment="Center" Background="Transparent" Foreground="BlanchedAlmond"/>
+                        <TextBlock Text="Zoom" HorizontalAlignment="Center" Background="Transparent" Foreground="White"/>
                         <!--Слайдер має певне значення якого набуває його скрол-->
                         <Slider Name="zoomSlider" Orientation="Vertical" Height="100" HorizontalAlignment="Center" MinHeight="0" Maximum="2" Value="1"/>
                         <Grid Width="50">
@@ -103,9 +97,10 @@
                 <TextBlock Margin="5,2,48,2" Text="Columns" 
                    Foreground="LightSteelBlue"/>
                 <TextBox MinWidth="50" Name="txtColumns" Background="White" Margin="0,0,40,0" />
+                <Button Name="alg" IsEnabled="true" Click="algButton_Click" Margin="0,20,40,0">Algorithm</Button>
             </StackPanel>
             <!--Площина, на якій збирається пазл разом з панеллю для вибору елементів-->
-            <Grid Name="grdPuzzle" Grid.Row="1" Grid.Column="1" MouseEnter="DockPanel_MouseEnter" Grid.RowSpan="2">
+            <Grid Name="grdPuzzle" Grid.Row="1" Grid.Column="1" Grid.RowSpan="2">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="10"/>
@@ -148,32 +143,7 @@
                                 ScaleY="{Binding ElementName=zoomSlider, Path=Value}"/>
                         </WrapPanel.RenderTransform>
                         <WrapPanel.Background>
-                            <DrawingBrush Viewport="0,0,50,50" ViewportUnits="Absolute" TileMode="Tile" Opacity="1.0">
-                                <DrawingBrush.Drawing>
-                                    <DrawingGroup>
-                                        <GeometryDrawing Brush="BlanchedAlmond">
-                                            <GeometryDrawing.Geometry>
-                                                <RectangleGeometry Rect="0,0,100,100"/>
-                                            </GeometryDrawing.Geometry>
-                                        </GeometryDrawing>
-
-                                        <GeometryDrawing>
-                                            <GeometryDrawing.Geometry>
-                                                <GeometryGroup>
-                                                    <RectangleGeometry Rect="0,0,50,50"/>
-                                                    <RectangleGeometry Rect="50,50,50,50"/>
-                                                </GeometryGroup>
-                                            </GeometryDrawing.Geometry>
-                                            <GeometryDrawing.Brush>
-                                                <LinearGradientBrush>
-                                                    <GradientStop Offset="0.0" Color="Gray"/>
-                                                    <GradientStop Offset="1.0" Color="Beige"/>
-                                                </LinearGradientBrush>
-                                            </GeometryDrawing.Brush>
-                                        </GeometryDrawing>
-                                    </DrawingGroup>
-                                </DrawingBrush.Drawing>
-                            </DrawingBrush>
+                            <SolidColorBrush Color="BlanchedAlmond"></SolidColorBrush>
                         </WrapPanel.Background>
                     </WrapPanel>
                     
