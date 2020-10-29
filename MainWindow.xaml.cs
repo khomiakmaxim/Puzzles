@@ -417,7 +417,9 @@ namespace PuzzlesProj
             }            
 
             var tpl = Precalc(chunks);
-            permResult = Solve(tpl.Item1, tpl.Item2, 1.5);                    
+            int coeff = rnd.Next(10, 15);
+            int chunk = rnd.Next(chunks.Count-1);
+            permResult = Solve(tpl.Item1, tpl.Item2, coeff/10, chunk);                    
 
             var shuffledPieces = pieces.OrderBy(i => Guid.NewGuid()).ToList();
             int it = 0;            
