@@ -71,6 +71,23 @@ namespace PuzzlesProj
 
         #region algorithm
 
+        long totalCost(List<int> perm, List<List<int>> LR, List<List<int>> UD)
+        {
+            long res = 0;
+            for (int i = 0; i < rows; ++i)
+            {
+                for (int j = 0; j < columns; ++j)
+                {
+                    int c1 = perm[i * rows + j];
+                    if (i + 1 < columns)
+                        res += LR[c1][perm[(i + 1) * columns + j]];
+                    if (j + 1 < rows)
+                        res += UD[c1][perm[i * rows + (j + 1)]];
+                }
+            }
+            return res;
+        }        
+
         private int LRCheck(List<List<Pixel>> l, List<List<Pixel>> r)
         {
             int n = Height;
@@ -131,6 +148,11 @@ namespace PuzzlesProj
             }
 
             return new Tuple<List<List<int>>, List<List<int>>>(UD, LR);
+        }
+
+        public Tuple<long, List<int>> Min(Tuple<long, List<int>> a, Tuple<long, List<int>> b)
+        {
+            return a.Item1 < b.Item1 ? a : b;
         }
         
         public Tuple<double, double, double> Max(Tuple<double, double, double> a, Tuple<double, double, double> b)
@@ -340,8 +362,7 @@ namespace PuzzlesProj
 
         private void CreatePuzzle(Stream streamSource)
         {
-            zoomSlider.Value = 0.50;
-            Random rnd = new Random();                                  
+            zoomSlider.Value = 0.50;                                             
             png = null;            
             
             imageSource = null;                        
@@ -414,12 +435,26 @@ namespace PuzzlesProj
                     shadowPieces.Add(shadowPiece);
                     index++;               
                 }
-            }            
+            }
+
+            Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
 
             var tpl = Precalc(chunks);
-            int coeff = rnd.Next(10, 15);
-            int chunk = rnd.Next(chunks.Count-1);
-            permResult = Solve(tpl.Item1, tpl.Item2, coeff/10, chunk);                    
+            const long LINF = (long)1e18 + 47;
+            Tuple<long, List<int>> best = new Tuple<long, List<int>>(LINF, Solve(tpl.Item1, tpl.Item2, 1, 0));
+            for (int i = 0; i < 10; ++i)
+            {
+                Random rnd = new Random();                
+                int coeff = rnd.Next(10, 15);
+                int chunk = rnd.Next(chunks.Count - 1);
+                permResult = Solve(tpl.Item1, tpl.Item2, coeff / 10, chunk);
+                best = Min(best, new Tuple<long, List<int>>(totalCost(permResult, tpl.Item1, tpl.Item2), permResult));
+            }
+
+            permResult = best.Item2;
+
+            Mouse.OverrideCursor = null;
+
 
             var shuffledPieces = pieces.OrderBy(i => Guid.NewGuid()).ToList();
             int it = 0;            
