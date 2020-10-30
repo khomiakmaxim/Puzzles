@@ -19,23 +19,24 @@ namespace PuzzlesProj
     /// Interaction logic for Window.xaml
     /// </summary>
     public partial class MainWindow : Window
-    {        
+    {
+        const int IINF = 2 << 31 - 47;
         //шматок пазла, який на даний момент в руці
-        Piece currentSelection = null;
+        Piece currentSelection;
         int selectionAngle = 0;
         List<Piece> pieces = new List<Piece>();
         List<Piece> shadowPieces = new List<Piece>();
         int columns;//кілкість колонок, на які все розбивається
         int rows;//кількість рядків
-        int Width;
-        int Height;
+        new int Width;
+        new int Height;
         double scale = 1.0;//коефіцієнт масштабування
         BitmapImage imageSource;
         string srcFileName = "";
         DropShadowBitmapEffect shadowEffect;//даний об'єкт дозволяє працювати з тінню
         System.Windows.Point lastCell = new System.Windows.Point(-1, 0);
         ScaleTransform stZoomed = new ScaleTransform//масштабування при виборі конкретного пазлу
-        {   ScaleX = 1.1,
+        { ScaleX = 1.1,
             ScaleY = 1.1
         };
 
@@ -51,13 +52,13 @@ namespace PuzzlesProj
         public MainWindow()
         {
             InitializeComponent();
-                        
+
             cnvPuzzle.MouseLeftButtonUp += new MouseButtonEventHandler(cnvPuzzle_MouseLeftButtonUp);
             cnvPuzzle.MouseDown += new MouseButtonEventHandler(cnvPuzzle_MouseDown);
-            cnvPuzzle.MouseMove += new MouseEventHandler(cnvPuzzle_MouseMove);            
+            cnvPuzzle.MouseMove += new MouseEventHandler(cnvPuzzle_MouseMove);
             cnvPuzzle.MouseEnter += new MouseEventHandler(cnvPuzzle_MouseEnter);
-            cnvPuzzle.MouseLeave += new MouseEventHandler(cnvPuzzle_MouseLeave);                        
-            
+            cnvPuzzle.MouseLeave += new MouseEventHandler(cnvPuzzle_MouseLeave);
+
             shadowEffect = new DropShadowBitmapEffect()
             {
                 Color = Colors.Black,
@@ -69,24 +70,27 @@ namespace PuzzlesProj
         }
 
 
-        #region algorithm
+        #region old algorithm
 
         long totalCost(List<int> perm, List<List<int>> LR, List<List<int>> UD)
         {
             long res = 0;
-            for (int i = 0; i < rows; ++i)
+
+            for (int i = 0; i < perm.Count - 1; ++i)
             {
-                for (int j = 0; j < columns; ++j)
-                {
-                    int c1 = perm[i * rows + j];
-                    if (i + 1 < columns)
-                        res += LR[c1][perm[(i + 1) * columns + j]];
-                    if (j + 1 < rows)
-                        res += UD[c1][perm[i * rows + (j + 1)]];
-                }
+                if (i % columns - 1 != 0)
+                    res += LR[i][i + 1];
             }
+
+            for (int i = 0; i < perm.Count - 1; ++i)
+            {
+                if (i < perm.Count - 1 - columns)
+                    res += UD[i][i + columns];
+            }
+
+
             return res;
-        }        
+        }
 
         private int LRCheck(List<List<Pixel>> l, List<List<Pixel>> r)
         {
@@ -95,9 +99,8 @@ namespace PuzzlesProj
 
             for (int i = 0; i < n; ++i)
             {
-                res += Math.Abs(l[i][Width - 1].Red - r[i][0].Red);                
-                res += Math.Abs(l[i][Width - 1].Green - r[i][0].Green);                
-                res += Math.Abs(l[i][Width - 1].Blue - r[i][0].Blue);                
+                res += Math.Abs(l[i][Width - 1].gray_scale() - r[i][0].gray_scale());
+                //або через rgb
             }
             return res;
         }
@@ -109,9 +112,7 @@ namespace PuzzlesProj
 
             for (int i = 0; i < n; ++i)
             {
-                res += Math.Abs(u[Height - 1][i].Red - d[0][i].Red);
-                res += Math.Abs(u[Height - 1][i].Green - d[0][i].Green);
-                res += Math.Abs(u[Height - 1][i].Blue - d[0][i].Blue);
+                res += Math.Abs(u[Height - 1][i].gray_scale() - d[0][i].gray_scale());
             }
 
             return res;
@@ -154,7 +155,7 @@ namespace PuzzlesProj
         {
             return a.Item1 < b.Item1 ? a : b;
         }
-        
+
         public Tuple<double, double, double> Max(Tuple<double, double, double> a, Tuple<double, double, double> b)
         {
             if (a.Item1 > b.Item1)
@@ -176,8 +177,8 @@ namespace PuzzlesProj
                 }
             }
         }
-        
-        
+
+
         private List<int> Solve(List<List<int>> LR, List<List<int>> UD, double coeff, int start_chunk = 0)
         {
             int m = chunks.Count;
@@ -198,19 +199,19 @@ namespace PuzzlesProj
             for (int i = 0; i < m; ++i)
                 used.Add(false);
             used[start_chunk] = true;
-            ans[rows - 1][columns - 1] = start_chunk;            
+            ans[rows - 1][columns - 1] = start_chunk;
 
             //усі можливі сусіди першого чанка(верхній, правий, ...)
             List<Tuple<int, int>> neighbours = new List<Tuple<int, int>>();
             List<Tuple<int, int, char>> MT = new List<Tuple<int, int, char>>
-            { 
+            {
                 new Tuple<int, int, char>(1, 0, 'D'),//той, що знизу від центрального
                 new Tuple<int, int, char>(0, 1, 'R'),//...
                 new Tuple<int, int, char>(-1, 0, 'U'),
                 new Tuple<int, int, char>(0, -1, 'L'),
             };
 
-            foreach(var i in MT)
+            foreach (var i in MT)
             {
                 neighbours.Add(new Tuple<int, int>(rows - 1 + i.Item1, columns - 1 + i.Item2));
             }
@@ -228,19 +229,19 @@ namespace PuzzlesProj
                 }
                 neighbours = good_neighbours;
                 double mnCost = 1e15;
-                //розглядаються лише доступні конкуренти для вставки
-                foreach(var i in neighbours)
+                //розглядаються лише доступні конкуренти для вставки                
+                foreach (var i in neighbours)
                 {
                     maksym.Add(new SortedSet<Tuple<double, int>>());
                     //для кожного місця перебираються всі чанки, які можна туди поставити
                     for (int ch = 0; ch < m; ++ch)
-                    { 
-                        if(used[ch])                        
+                    {
+                        if (used[ch])
                             continue;
                         long sm = 0;
                         int cnt = 0;
 
-                        foreach(var j in MT)
+                        foreach (var j in MT)
                         {
                             int ni = i.Item1 + j.Item1;
                             int nj = i.Item2 + j.Item2;
@@ -260,12 +261,12 @@ namespace PuzzlesProj
                                     score = LR[nc][ch];
                                 ++cnt;
                                 sm += score;
-                            }                            
+                            }
                         }
                         maksym.Last().Add(new Tuple<double, int>((double)sm / cnt, ch));
                     }
                     //значення мінімальної вартості вставки оновлюється при потребі
-                    mnCost = Math.Min(mnCost, maksym.Last().First().Item1);                    
+                    mnCost = Math.Min(mnCost, maksym.Last().First().Item1);
                 }
                 double mid = mnCost * coeff;//оптимізаційний момент
                 Tuple<double, double, double> best = new Tuple<double, double, double>(0, 0, 0);
@@ -281,7 +282,7 @@ namespace PuzzlesProj
                         best = new Tuple<double, double, double>(cost, ch, x);
                     }
                     else
-                    {                        
+                    {
                         double d = a.ElementAt(1).Item1 - a.First().Item1;
                         double cost = a.First().Item1;
                         double ch = a.First().Item2;
@@ -325,14 +326,14 @@ namespace PuzzlesProj
                         //добавлення нового кандидата до списку
                         neighbours.Add(new Tuple<int, int>(ni, nj));
                     }
-                }                
+                }
             }
-            
+
             //відповідна перестановка
             List<int> perm = new List<int>(m);
-            for (int i = 0; i < columns*2; ++i)
+            for (int i = 0; i < columns * 2; ++i)
             {
-                for (int j = 0; j < rows*2; ++j)
+                for (int j = 0; j < rows * 2; ++j)
                 {
                     if (ans[j][i] != -1)
                     {
@@ -340,7 +341,7 @@ namespace PuzzlesProj
                     }
                 }
             }
-            
+
             List<int> fullPerm = perm.OrderBy(i => i).ToList();
 
             List<int> actual = new List<int>(m);
@@ -357,6 +358,137 @@ namespace PuzzlesProj
 
             return perm;//вихідна готова перестановка
         }
+
+        #endregion
+
+        #region new algorithm
+
+        private int DWT(List<Pixel> a, List<Pixel> b)
+        {
+            int size = a.Count;
+            int w = (int)(size * 0.1);//10% від всієї довжини
+            int[][] result = new int[size][];
+            for (int i = 0; i < size; ++i) result[i] = new int[size];
+
+            for (int n = 0; n < size; ++n)
+            {
+                for (int m = 0; m < size; ++m)
+                {
+                    if (Math.Max(0, n - w) <= m && Math.Min(size - 1, n + w - 2) >= m)
+                    {
+                        result[n][m] = 0;
+                    }
+                    else
+                    {
+                        result[n][m] = IINF;
+                    }
+                }
+            }
+
+            for (int i = 0; i < size; ++i)
+            {
+                if (result[i][0] == 0)
+                {
+                    result[i][0] = Math.Abs(a[i].gray_scale() - b[0].gray_scale());
+                }
+
+                if (result[0][i] == 0)
+                {
+                    result[0][i] = Math.Abs(a[0].gray_scale() - b[i].gray_scale());
+                }
+            }
+
+            for (int n = 0; n < size; ++n)
+            {
+                for (int m = 0; m < size; ++m)
+                {
+                    if (result[n][m] == 0)
+                    {
+                        result[n][m] = Math.Abs(a[n].gray_scale() - b[m].gray_scale()) +
+                            Math.Min(Math.Min(result[n - 1][m], result[n - 1][m - 1]), result[n][m - 1]);
+                    }
+                }
+            }
+
+            return result[size - 1][size - 1];
+        }
+
+        public int UDDCheck(List<List<Pixel>> a, List<List<Pixel>> b)
+        {
+            int res = 0;
+
+            for (int i = 0; i < Width; ++i)
+            {
+                res += DWT(a[Height - 1], b[0]);
+            }
+
+            return res;
+        }
+
+        public int LRDCheck(List<List<Pixel>> a, List<List<Pixel>> b)
+        {
+            int res = 0;
+
+            List<Pixel> left = new List<Pixel>();
+            List<Pixel> right = new List<Pixel>();
+
+            for (int i = 0; i < Height; ++i)
+            {
+                left.Add(b[i][0]);
+            }
+
+            for (int i = 0; i < Height; ++i)
+            {
+                right.Add(a[i][Width - 1]);
+            }
+
+            for (int i = 0; i < Height; ++i)
+            {
+                res += DWT(left, right);
+            }
+
+            return res;
+        }
+
+        private Tuple<List<List<int>>, List<List<int>>> Precalc2(List<List<List<Pixel>>> chunks)
+        {
+            int m = chunks.Count;
+
+            List<List<int>> UD = new List<List<int>>(m);
+            List<List<int>> LR = new List<List<int>>(m);
+
+            for (int i = 0; i < m; ++i)
+            {
+                UD.Add(new List<int>(m));
+                LR.Add(new List<int>(m));
+            }
+
+            for (int i = 0; i < m; ++i)
+            {
+                for (int j = 0; j < m; ++j)
+                {
+                    if (i != j)
+                    {
+                        UD[i].Add(UDDCheck(chunks[i], chunks[j]));
+                        LR[i].Add(LRDCheck(chunks[i], chunks[j]));
+                    }
+                    else
+                    {
+                        UD[i].Add(IINF);
+                        LR[i].Add(IINF);
+                    }
+                }
+            }
+
+            return new Tuple<List<List<int>>, List<List<int>>>(UD, LR);
+        }
+
+        //public List<int> HungarianSolve(List<List<int>> UD, List<List<int>> LR)
+        //{
+        //    int c = 0;
+        //    for(int k = 0; k < )
+        //}
+
 
         #endregion
 
@@ -442,12 +574,12 @@ namespace PuzzlesProj
             var tpl = Precalc(chunks);
             const long LINF = (long)1e18 + 47;
             Tuple<long, List<int>> best = new Tuple<long, List<int>>(LINF, Solve(tpl.Item1, tpl.Item2, 1, 0));
-            for (int i = 0; i < 10; ++i)
+            for (int i = 0; i < 1; ++i)
             {
                 Random rnd = new Random();                
                 int coeff = rnd.Next(10, 15);
                 int chunk = rnd.Next(chunks.Count - 1);
-                permResult = Solve(tpl.Item1, tpl.Item2, coeff / 10, chunk);
+                permResult = Solve(tpl.Item1, tpl.Item2, 1, chunk);
                 best = Min(best, new Tuple<long, List<int>>(totalCost(permResult, tpl.Item1, tpl.Item2), permResult));
             }
 

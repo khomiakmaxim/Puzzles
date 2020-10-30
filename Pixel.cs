@@ -28,9 +28,14 @@ namespace PuzzlesProj
             this.blue = blue;
         }
 
-        public override string ToString()
+        public  int gray_scale()
         {
-            return red + " " + green + " " + blue + "\n";
+            return (int) (0.3 * red + 0.59 * green + 0.11 * blue);
+        }
+
+    public override string ToString()
+        {
+            return gray_scale() + "\n";
         }
     }
 }
