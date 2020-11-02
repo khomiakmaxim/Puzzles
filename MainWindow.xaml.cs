@@ -83,11 +83,11 @@ namespace PuzzlesProj
                 for (int j = 0; j < columns; ++j)
                 {
                     //підозрюю, що цей метод працює норм
-                    int c1 = perm[i * rows + j];
-                    if (i + 1 < rows)
-                        res += LR[c1][perm[(i + 1) * rows + j]];
+                    int c1 = perm[i * columns + j];
                     if (j + 1 < columns)
-                        res += UD[c1][perm[i * rows + (j + 1)]];
+                        res += LR[c1][perm[(i * columns) + j + 1]];
+                    if (i + 1 < rows)
+                        res += UD[c1][perm[(i + 1) * columns + j]];
                 }
             }           
 
@@ -155,7 +155,7 @@ namespace PuzzlesProj
                 }
             }
 
-            return new Tuple<List<List<int>>, List<List<int>>>(UD, LR);
+            return new Tuple<List<List<int>>, List<List<int>>>(LR, UD);
         }
 
         public Tuple<long, List<int>> Min(Tuple<long, List<int>> a, Tuple<long, List<int>> b)
@@ -225,13 +225,13 @@ namespace PuzzlesProj
             int progress = 1;
             while (progress < m)
             {
-                List<SortedSet<Tuple<double, int>>> maksym = new List<SortedSet<Tuple<double, int>>>();//даний список тримє в набір всіх можливих вставок для всіх кандидатів
+                List<SortedSet<Tuple<double, int>>> maksym = new List<SortedSet<Tuple<double, int>>>();//даний список тримє в набір всіх можливих вставок для всіх кандидатів(сусідів)
                 List<Tuple<int, int>> good_neighbours = new List<Tuple<int, int>>();
                 foreach (var i in neighbours)
                 {
                     //розглядатимуться лише ті випадки, коли пазл не порушує констрейнт розміру картинки
                     if ((i.Item1 - mnI + 1 > rows) || (mxI - i.Item1 + 1 > rows) || (i.Item2 - mnJ + 1 > columns) || (mxJ - i.Item2 + 1 > columns))
-                        continue;
+                        continue;//можливе місце багу з не всіма
                     good_neighbours.Add(i);
                 }
                 neighbours = good_neighbours;
@@ -338,13 +338,13 @@ namespace PuzzlesProj
 
             //відповідна перестановка
             List<int> perm = new List<int>(m);
-            for (int i = 0; i < columns * 2; ++i)
+            for (int i = 0; i < rows * 2; ++i)
             {
-                for (int j = 0; j < rows * 2; ++j)
+                for (int j = 0; j < columns * 2; ++j)
                 {
-                    if (ans[j][i] != -1)
+                    if (ans[i][j] != -1)
                     {
-                        perm.Add(ans[j][i]);
+                        perm.Add(ans[i][j]);
                     }
                 }
             }
