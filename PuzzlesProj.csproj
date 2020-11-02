@@ -105,10 +105,10 @@
     <Resource Include="Images\NewPuzzle.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Images\ShowImage.png" />
+    <Resource Include="Images\ShowPuzzle.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Images\ShowPuzzle.png" />
+    <Resource Include="Images\ShowImage.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

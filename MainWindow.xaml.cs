@@ -20,7 +20,7 @@ namespace PuzzlesProj
     /// </summary>
     public partial class MainWindow : Window
     {
-        const int IINF = 2 << 31 - 47;
+        const int IINF = 2 << 32 - 47;
         //шматок пазла, який на даний момент в руці
         Piece currentSelection;
         int selectionAngle = 0;
@@ -28,8 +28,8 @@ namespace PuzzlesProj
         List<Piece> shadowPieces = new List<Piece>();
         int columns;//кілкість колонок, на які все розбивається
         int rows;//кількість рядків
-        new int Width;
-        new int Height;
+        new int Width;//ширина кожного пазла(у пікселях)
+        new int Height;//висота
         double scale = 1.0;//коефіцієнт масштабування
         BitmapImage imageSource;
         string srcFileName = "";
@@ -42,10 +42,10 @@ namespace PuzzlesProj
 
         //матриця пікселів для алгоритму
         List<List<List<Pixel>>> chunks = new List<List<List<Pixel>>>();
-        //перестановка, згенерована алгоритмом
+        //перестановка, згенерована алгоритмом(індексується як перестановка в панелі вибору)
         List<int> permResult = new List<int>();
 
-        PngBitmapEncoder png;
+        PngBitmapEncoder png;//кодує png в bitmap
         double initialRectangleX = 0;
         double initialRectangleY = 0;
         System.Windows.Shapes.Rectangle rectSelection = new System.Windows.Shapes.Rectangle();
@@ -70,8 +70,10 @@ namespace PuzzlesProj
         }
 
 
-        #region old algorithm
+        #region algorithm
 
+        //на вхід подається перестановка з m індексів
+        //LR і UD розміру m*m
         long totalCost(List<int> perm, List<List<int>> LR, List<List<int>> UD)
         {
             long res = 0;          
@@ -80,6 +82,7 @@ namespace PuzzlesProj
             {
                 for (int j = 0; j < columns; ++j)
                 {
+                    //підозрюю, що цей метод працює норм
                     int c1 = perm[i * rows + j];
                     if (i + 1 < rows)
                         res += LR[c1][perm[(i + 1) * rows + j]];
