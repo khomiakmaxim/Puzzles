@@ -46,9 +46,7 @@ namespace PuzzlesProj
             int Width = (int)imageSource.Width / columns;
             int Height = (int)imageSource.Height / rows;
 
-            this.ImageUri = imageUri;
-            this.InitialX = x;
-            this.InitialY = y;
+            this.ImageUri = imageUri;            
             this.X = x;
             this.Y = y;            
             this.Index = index;

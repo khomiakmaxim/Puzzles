@@ -28,15 +28,14 @@ namespace PuzzlesProj
         List<Piece> shadowPieces = new List<Piece>();
         int columns;//кілкість колонок, на які все розбивається
         int rows;//кількість рядків
-        new int Width;//ширина кожного пазла(у пікселях)
+        new int Width;//ширина кожного пазла
         new int Height;//висота
         double scale = 1.0;//коефіцієнт масштабування
-        BitmapImage imageSource;
+        BitmapImage imageSource;//картинка, яка розбивається на пазли
         string srcFileName = "";
         DropShadowBitmapEffect shadowEffect;//даний об'єкт дозволяє працювати з тінню
-        System.Windows.Point lastCell = new System.Windows.Point(-1, 0);
         ScaleTransform stZoomed = new ScaleTransform//масштабування при виборі конкретного пазлу
-        { ScaleX = 1.1,
+        {   ScaleX = 1.1,
             ScaleY = 1.1
         };
 
@@ -45,7 +44,7 @@ namespace PuzzlesProj
         //перестановка, згенерована алгоритмом(індексується як перестановка в панелі вибору)
         List<int> permResult = new List<int>();
 
-        PngBitmapEncoder png;//кодує png в bitmap
+        PngBitmapEncoder png;
         double initialRectangleX = 0;
         double initialRectangleY = 0;
         System.Windows.Shapes.Rectangle rectSelection = new System.Windows.Shapes.Rectangle();
@@ -72,8 +71,7 @@ namespace PuzzlesProj
 
         #region algorithm
 
-        //на вхід подається перестановка з m індексів
-        //LR і UD розміру m*m
+        
         long totalCost(List<int> perm, List<List<int>> LR, List<List<int>> UD)
         {
             long res = 0;          
@@ -81,8 +79,7 @@ namespace PuzzlesProj
             for (int i = 0; i < rows; ++i)
             {
                 for (int j = 0; j < columns; ++j)
-                {
-                    //підозрюю, що цей метод працює норм
+                {                   
                     int c1 = perm[i * columns + j];
                     if (j + 1 < columns)
                         res += LR[c1][perm[(i * columns) + j + 1]];
@@ -186,7 +183,7 @@ namespace PuzzlesProj
         }
 
 
-        private List<int> Solve(List<List<int>> LR, List<List<int>> UD, double coeff, int start_chunk = 0)
+        private List<int> Solve(List<List<int>> LR, List<List<int>> UD, double coeff, int start_chunk)
         {
             int m = chunks.Count;
 
@@ -225,18 +222,19 @@ namespace PuzzlesProj
             int progress = 1;
             while (progress < m)
             {
-                List<SortedSet<Tuple<double, int>>> maksym = new List<SortedSet<Tuple<double, int>>>();//даний список тримє в набір всіх можливих вставок для всіх кандидатів(сусідів)
+                //даний список тримає в набір всіх можливих вставок для всіх кандидатів(сусідів)
+                List<SortedSet<Tuple<double, int>>> maksym = new List<SortedSet<Tuple<double, int>>>();
                 List<Tuple<int, int>> good_neighbours = new List<Tuple<int, int>>();
                 foreach (var i in neighbours)
                 {
                     //розглядатимуться лише ті випадки, коли пазл не порушує констрейнт розміру картинки
                     if ((i.Item1 - mnI + 1 > rows) || (mxI - i.Item1 + 1 > rows) || (i.Item2 - mnJ + 1 > columns) || (mxJ - i.Item2 + 1 > columns))
-                        continue;//можливе місце багу з не всіма
+                        continue;
                     good_neighbours.Add(i);
                 }
                 neighbours = good_neighbours;
                 double mnCost = 1e15;
-                //розглядаються лише доступні конкуренти для вставки                
+                //розглядаються лише доступні варіанти для вставки                
                 foreach (var i in neighbours)
                 {
                     maksym.Add(new SortedSet<Tuple<double, int>>());
@@ -277,7 +275,6 @@ namespace PuzzlesProj
                 }
                 double mid = mnCost * coeff;//оптимізаційний момент
                 Tuple<double, double, double> best = new Tuple<double, double, double>(0, 0, 0);
-                Tuple<double, double, double> best2 = new Tuple<double, double, double>(0, 0, 0);
                 for (int x = 0; x < neighbours.Count; ++x)
                 {
                     var a = maksym[x];
@@ -293,17 +290,12 @@ namespace PuzzlesProj
                         double d = a.ElementAt(1).Item1 - a.First().Item1;
                         double cost = a.First().Item1;
                         double ch = a.First().Item2;
-                        if (cost <= mid)//на деяких, не лише на найкращому спрацює
+                        if (cost < mid)
                         {
                             best = Max(best, new Tuple<double, double, double>(d, ch, x));
-                        }
-                        best2 = Max(best2, new Tuple<double, double, double>(d, ch, x));
+                        }                        
                     }
-                }
-                if (best == new Tuple<double, double, double>(0, 0, 0))
-                    best = best2;
-                //best - жадібно найкращий варіант для вставки, x - індекс серед сусідів
-                //ch - індекс чанку
+                }                
                 var z = neighbours[(int)best.Item3];
                 int I = z.Item1;
                 int J = z.Item2;
@@ -772,8 +764,7 @@ namespace PuzzlesProj
                     currentSelection.IsSelected = false;
                     shadowPieces[currentSelection.Index].RenderTransform = st;
 
-                    lastCell = SetCurrentPiecePosition(currentSelection, newX, newY);
-
+                    SetCurrentPiecePosition(currentSelection, newX, newY);
                     ResetZIndexes();                                       
 
                     currentSelection = null;

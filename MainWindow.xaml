@@ -28,8 +28,8 @@
         <Grid Name="grdWindow" Margin="25,0,25,25">
             <Grid.RowDefinitions>
                 <RowDefinition Height="32"/>
-                <RowDefinition Height="130*"/>
-                <RowDefinition Height="151*"/>
+                <RowDefinition Height="13*"/>
+                <RowDefinition Height="15*"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="100"/>
@@ -64,7 +64,7 @@
                             <RowDefinition Height="24"/>
                         </Grid.RowDefinitions>
                         <Image Grid.Row="0" Source="Images/ShowImage.png"/>
-                        <TextBlock Grid.Row="1" Name="txtShowImage" FontSize="12" Text=" Show Image"/>
+                        <TextBlock Grid.Row="1" Name="txtShowImage" FontSize="12" Text="Show Image"/>
                     </Grid>
                 </Button>
                 <Button Name="btnShowPuzzle" Width="100" HorizontalAlignment="Center" Margin="10" Click="btnShowPuzzle_Click" Visibility="Collapsed">
@@ -75,7 +75,7 @@
                             <RowDefinition Height="24"/>
                         </Grid.RowDefinitions>
                         <Image Grid.Row="0" Source="Images/ShowPuzzle.png"/>
-                        <TextBlock Grid.Row="1" Name="txtShowPuzzle" FontSize="12" Text="ShowPuzzle"/>
+                        <TextBlock Grid.Row="1" Name="txtShowPuzzle" FontSize="12" Text=" ShowPuzzle"/>
                     </Grid>
                 </Button>
                 <!--Stack Panel для слайдера-->
@@ -111,7 +111,7 @@
                 <ScrollViewer Grid.Row="0" Name="scvPuzzle" VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Visible" HorizontalAlignment="Left" VerticalAlignment="Top"  Visibility="Visible">
                     <Grid>
                         <!---Полотно, на якому збиратиметься пазл -->
-                        <Canvas Name="cnvPuzzle" Margin="0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="2000" Height="2000">
+                        <Canvas Name="cnvPuzzle" Margin="0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="3000" Height="2000">
                             <Canvas.RenderTransform>
                                 <!--Використовується DependencyProperties з zoomSlider-->
                                 <ScaleTransform
