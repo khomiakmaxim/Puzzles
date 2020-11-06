@@ -19,11 +19,9 @@ namespace PuzzlesProj
     /// Interaction logic for Window.xaml
     /// </summary>
     public partial class MainWindow : Window
-    {
-        const int IINF = 2 << 32 - 47;
+    {        
         //шматок пазла, який на даний момент в руці
-        Piece currentSelection;
-        int selectionAngle = 0;
+        Piece currentSelection;        
         List<Piece> pieces = new List<Piece>();
         List<Piece> shadowPieces = new List<Piece>();
         int columns;//кілкість колонок, на які все розбивається
@@ -31,20 +29,20 @@ namespace PuzzlesProj
         new int Width;//ширина кожного пазла
         new int Height;//висота
         double scale = 1.0;//коефіцієнт масштабування
+        //BitmapSource represents a single, constant set of pixels at a certain size and resolution.
         BitmapImage imageSource;//картинка, яка розбивається на пазли
         string srcFileName = "";
         DropShadowBitmapEffect shadowEffect;//даний об'єкт дозволяє працювати з тінню
         ScaleTransform stZoomed = new ScaleTransform//масштабування при виборі конкретного пазлу
         {   ScaleX = 1.1,
             ScaleY = 1.1
-        };
-
+        };        
         //матриця пікселів для алгоритму
         List<List<List<Pixel>>> chunks = new List<List<List<Pixel>>>();
-        //перестановка, згенерована алгоритмом(індексується як перестановка в панелі вибору)
+        //перестановка, згенерована алгоритмом
         List<int> permResult = new List<int>();
 
-        PngBitmapEncoder png;
+        PngBitmapEncoder png;//використовую для завантаження зображення
         double initialRectangleX = 0;
         double initialRectangleY = 0;
         System.Windows.Shapes.Rectangle rectSelection = new System.Windows.Shapes.Rectangle();
@@ -66,300 +64,9 @@ namespace PuzzlesProj
                 Softness = 1,
                 Opacity = 0.5
             };
-        }
+        }                                                
 
-
-        #region algorithm
-
-        
-        long totalCost(List<int> perm, List<List<int>> LR, List<List<int>> UD)
-        {
-            long res = 0;          
-
-            for (int i = 0; i < rows; ++i)
-            {
-                for (int j = 0; j < columns; ++j)
-                {                   
-                    int c1 = perm[i * columns + j];
-                    if (j + 1 < columns)
-                        res += LR[c1][perm[(i * columns) + j + 1]];
-                    if (i + 1 < rows)
-                        res += UD[c1][perm[(i + 1) * columns + j]];
-                }
-            }           
-
-            return res;
-        }
-
-        private int LRCheck(List<List<Pixel>> l, List<List<Pixel>> r)
-        {
-            int n = Height;
-            int res = 0;
-
-            for (int i = 0; i < n; ++i)
-            {
-                //res += Math.Abs(l[i][Width - 1].gray_scale() - r[i][0].gray_scale());
-                res += Math.Abs(l[i][Width - 1].Red - r[i][0].Red);
-                res += Math.Abs(l[i][Width - 1].Green - r[i][0].Green);
-                res += Math.Abs(l[i][Width - 1].Blue - r[i][0].Blue);
-            }
-            return res;
-        }
-
-        private int UDCheck(List<List<Pixel>> u, List<List<Pixel>> d)
-        {
-            int n = Width;
-            int res = 0;
-
-            for (int i = 0; i < n; ++i)
-            {
-                //res += Math.Abs(u[Height - 1][i].gray_scale() - d[0][i].gray_scale());
-                res += Math.Abs(u[Height - 1][i].Red - d[0][i].Red);
-                res += Math.Abs(u[Height - 1][i].Green - d[0][i].Green);
-                res += Math.Abs(u[Height - 1][i].Blue - d[0][i].Blue);
-            }
-
-            return res;
-        }
-
-        private Tuple<List<List<int>>, List<List<int>>> Precalc(List<List<List<Pixel>>> chunks)
-        {
-            int m = chunks.Count;
-
-            List<List<int>> UD = new List<List<int>>(m);
-            List<List<int>> LR = new List<List<int>>(m);
-
-            for (int i = 0; i < m; ++i)
-            {
-                UD.Add(new List<int>(m));
-                LR.Add(new List<int>(m));
-            }
-
-            for (int i = 0; i < m; ++i)
-            {
-                for (int j = 0; j < m; ++j)
-                {
-                    if (i != j)
-                    {
-                        UD[i].Add(UDCheck(chunks[i], chunks[j]));
-                        LR[i].Add(LRCheck(chunks[i], chunks[j]));
-                    }
-                    else
-                    {
-                        UD[i].Add(0);
-                        LR[i].Add(0);
-                    }
-                }
-            }
-
-            return new Tuple<List<List<int>>, List<List<int>>>(LR, UD);
-        }
-
-        public Tuple<long, List<int>> Min(Tuple<long, List<int>> a, Tuple<long, List<int>> b)
-        {
-            return a.Item1 < b.Item1 ? a : b;
-        }
-
-        public Tuple<double, double, double> Max(Tuple<double, double, double> a, Tuple<double, double, double> b)
-        {
-            if (a.Item1 > b.Item1)
-                return a;
-            else if (a.Item1 < b.Item1)
-                return b;
-            else
-            {
-                if (a.Item2 > b.Item2)
-                    return a;
-                else if (a.Item2 < b.Item2)
-                    return b;
-                else
-                {
-                    if (a.Item3 >= b.Item3)
-                        return a;
-                    else
-                        return b;
-                }
-            }
-        }
-
-
-        private List<int> Solve(List<List<int>> LR, List<List<int>> UD, double coeff, int start_chunk)
-        {
-            int m = chunks.Count;
-
-            int mnI = rows - 1, mxI = rows - 1;//допустимі границі
-            int mnJ = columns - 1, mxJ = columns - 1;
-
-            List<List<int>> ans = new List<List<int>>(rows * 2);//прямокутний пазл, розміри якого вдвічі більші за той, що потрібно зібрати
-            for (int i = 0; i < rows * 2; ++i)
-            {
-                ans.Add(new List<int>(columns * 2));
-                for (int j = 0; j < columns * 2; ++j)
-                    ans[i].Add(-1);
-            }
-
-            List<bool> used = new List<bool>(m);
-
-            for (int i = 0; i < m; ++i)
-                used.Add(false);
-            used[start_chunk] = true;
-            ans[rows - 1][columns - 1] = start_chunk;
-
-            //усі можливі сусіди першого чанка(верхній, правий, ...)
-            List<Tuple<int, int>> neighbours = new List<Tuple<int, int>>();
-            List<Tuple<int, int, char>> MT = new List<Tuple<int, int, char>>
-            {
-                new Tuple<int, int, char>(1, 0, 'D'),//той, що знизу від центрального
-                new Tuple<int, int, char>(0, 1, 'R'),//...
-                new Tuple<int, int, char>(-1, 0, 'U'),
-                new Tuple<int, int, char>(0, -1, 'L'),
-            };
-
-            foreach (var i in MT)
-            {
-                neighbours.Add(new Tuple<int, int>(rows - 1 + i.Item1, columns - 1 + i.Item2));
-            }
-            int progress = 1;
-            while (progress < m)
-            {
-                //даний список тримає в набір всіх можливих вставок для всіх кандидатів(сусідів)
-                List<SortedSet<Tuple<double, int>>> maksym = new List<SortedSet<Tuple<double, int>>>();
-                List<Tuple<int, int>> good_neighbours = new List<Tuple<int, int>>();
-                foreach (var i in neighbours)
-                {
-                    //розглядатимуться лише ті випадки, коли пазл не порушує констрейнт розміру картинки
-                    if ((i.Item1 - mnI + 1 > rows) || (mxI - i.Item1 + 1 > rows) || (i.Item2 - mnJ + 1 > columns) || (mxJ - i.Item2 + 1 > columns))
-                        continue;
-                    good_neighbours.Add(i);
-                }
-                neighbours = good_neighbours;
-                double mnCost = 1e15;
-                //розглядаються лише доступні варіанти для вставки                
-                foreach (var i in neighbours)
-                {
-                    maksym.Add(new SortedSet<Tuple<double, int>>());
-                    //для кожного місця перебираються всі чанки, які можна туди поставити
-                    for (int ch = 0; ch < m; ++ch)
-                    {
-                        if (used[ch])
-                            continue;
-                        long sm = 0;
-                        int cnt = 0;
-
-                        foreach (var j in MT)
-                        {
-                            int ni = i.Item1 + j.Item1;
-                            int nj = i.Item2 + j.Item2;
-                            if (ni < 0 || nj < 0 || ni >= rows * 2 || nj >= columns * 2)
-                                continue;
-                            if (ans[ni][nj] != -1)//якщо сусід сусіда вже має позицію
-                            {
-                                long score = 0;
-                                int nc = ans[ni][nj];
-                                if (j.Item3 == 'D')
-                                    score = UD[ch][nc];
-                                if (j.Item3 == 'R')
-                                    score = LR[ch][nc];
-                                if (j.Item3 == 'U')
-                                    score = UD[nc][ch];
-                                if (j.Item3 == 'L')
-                                    score = LR[nc][ch];
-                                ++cnt;
-                                sm += score;
-                            }
-                        }
-                        maksym.Last().Add(new Tuple<double, int>((double)sm / cnt, ch));
-                    }
-                    //значення мінімальної вартості вставки оновлюється при потребі
-                    mnCost = Math.Min(mnCost, maksym.Last().First().Item1);
-                }
-                double mid = mnCost * coeff;//оптимізаційний момент
-                Tuple<double, double, double> best = new Tuple<double, double, double>(0, 0, 0);
-                for (int x = 0; x < neighbours.Count; ++x)
-                {
-                    var a = maksym[x];
-                    if (a.Count == 1)
-                    {
-                        double cost = a.First().Item1;
-                        int ch = a.First().Item2;
-
-                        best = new Tuple<double, double, double>(cost, ch, x);
-                    }
-                    else
-                    {
-                        double d = a.ElementAt(1).Item1 - a.First().Item1;
-                        double cost = a.First().Item1;
-                        double ch = a.First().Item2;
-                        if (cost < mid)
-                        {
-                            best = Max(best, new Tuple<double, double, double>(d, ch, x));
-                        }                        
-                    }
-                }                
-                var z = neighbours[(int)best.Item3];
-                int I = z.Item1;
-                int J = z.Item2;
-                int bch = (int)best.Item2;
-
-                //допустимі границі мають бути перерахованими
-                mnI = Math.Min(mnI, I);
-                mxI = Math.Max(mxI, I);
-                mnJ = Math.Min(mnJ, J);
-                mxJ = Math.Max(mxJ, J);
-
-                ans[I][J] = bch;
-                used[bch] = true;
-                ++progress;
-
-                //видалення вставленого кандидата з списку
-                neighbours.Remove(neighbours.Find(c => c == new Tuple<int, int>(I, J)));
-
-                foreach (var k in MT)
-                {
-                    int ni = I + k.Item1;
-                    int nj = J + k.Item2;
-                    if (ni - mnI + 1 > rows || mxI - ni + 1 > rows || nj - mnJ + 1 > columns || mxJ - nj + 1 > columns)
-                        continue;
-                    if (ans[ni][nj] == -1)
-                    {
-                        //добавлення нового кандидата до списку
-                        neighbours.Add(new Tuple<int, int>(ni, nj));
-                    }
-                }
-            }
-
-            //відповідна перестановка
-            List<int> perm = new List<int>(m);
-            for (int i = 0; i < rows * 2; ++i)
-            {
-                for (int j = 0; j < columns * 2; ++j)
-                {
-                    if (ans[i][j] != -1)
-                    {
-                        perm.Add(ans[i][j]);
-                    }
-                }
-            }
-
-            List<int> fullPerm = perm.OrderBy(i => i).ToList();
-
-            List<int> actual = new List<int>(m);
-            for (int x = 0; x < m; ++x) actual.Add(x);
-
-            for (int x = 0; x < m; ++x)
-            {
-                if (x >= fullPerm.Count || fullPerm[x] != actual[x])
-                {
-                    fullPerm.Insert(x, actual[x]);
-                    perm.Add(actual[x]);
-                }
-            }
-
-            return perm;//вихідна готова перестановка
-        }
-
-        #endregion        
-
+        //даний метод створюєм пазли
         private void CreatePuzzle(Stream streamSource)
         {
             zoomSlider.Value = 0.50;                                             
@@ -379,8 +86,9 @@ namespace PuzzlesProj
             //List<Pixel> - ряд пікселів
             //List<List<Pixel>> - ряд рядів
             chunks = new List<List<List<Pixel>>>();
-            Bitmap alg = BitmapImage2Bitmap(imageSource);
 
+            //перетворення bitmapImage в bitmap
+            Bitmap alg = BitmapImage2Bitmap(imageSource);
             for (int i = 0; i < rows; ++i)
             {
                 for (int j = 0; j < columns; ++j)
@@ -396,6 +104,7 @@ namespace PuzzlesProj
                     {
                         for (int y = 0; y < Width; ++y)
                         {
+                            //отримання кольору для кожного пікселя
                             System.Drawing.Color clr = alg.GetPixel(j * Width +  y, i * Height + x);
                             ch[x].Add(new Pixel(clr.R, clr.G, clr.B));
                         }
@@ -412,7 +121,8 @@ namespace PuzzlesProj
 
             var angles = new int[] { 0, 90, 180, 270 };            
 
-            int index = 0;//присвоєння індекса кожному пазлу
+            //нарізання пазлу
+            int index = 0;
             for (var y = 0; y < rows; ++y)
             {
                 for (var x = 0; x < columns; ++x)
@@ -439,15 +149,16 @@ namespace PuzzlesProj
 
             Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
 
-            var tpl = Precalc(chunks);
+            Solver slvr = new Solver(rows, columns, Width, Height);
+            var tpl = slvr.Precalc(chunks);
             const long LINF = (long)1e18 + 47;
-            Tuple<long, List<int>> best = new Tuple<long, List<int>>(LINF, Solve(tpl.Item1, tpl.Item2, 1, 0));
+            Tuple<long, List<int>> best = new Tuple<long, List<int>>(LINF, slvr.Solve(tpl.Item1, tpl.Item2, 1, 0));
             for (int i = 0; i < chunks.Count; ++i)
             {
                 Random rnd = new Random();
                 int coeff = rnd.Next(15, 35);
-                permResult = Solve(tpl.Item1, tpl.Item2, (double)coeff/10, i);
-                best = Min(best, new Tuple<long, List<int>>(totalCost(permResult, tpl.Item1, tpl.Item2), permResult));
+                permResult = slvr.Solve(tpl.Item1, tpl.Item2, (double)coeff / 10, i);
+                best = slvr.Min(best, new Tuple<long, List<int>>(slvr.totalCost(permResult, tpl.Item1, tpl.Item2), permResult));
             }
 
             permResult = best.Item2;
@@ -471,7 +182,7 @@ namespace PuzzlesProj
                 pnlPickUp.Children.Insert(it++, p);//заповнюється wrapPanel                                
             }
             pieces = shuffledPieces;
-            List<int> actualPerm = new List<int>(columns * rows);
+            List<int> actualPerm = new List<int>(columns * rows);            
             for (int iter = 0; iter < columns * rows; ++iter)
             {
                 var i = pieces.Where(p => p.Index == permResult[iter]).FirstOrDefault();
@@ -482,10 +193,9 @@ namespace PuzzlesProj
             
             rectSelection.SetValue(Canvas.ZIndexProperty, 5000);            
             cnvPuzzle.Children.Add(rectSelection);
-
-            //SetAll();
         }
 
+        //складання пазлу в залежності від перестановки, яку видав алгоритм
         private void SetAll()
         {
             int it = 0;
@@ -495,7 +205,7 @@ namespace PuzzlesProj
                 for (int j = 0; j < columns; ++j)
                 {
                     var p = pieces.ElementAt(permResult[it++]);
-                    pnlPickUp.Children.Remove(p);
+                    pnlPickUp.Children.Remove(p);                    
                     cnvPuzzle.Children.Add(p);
                     SetCurrentPiecePosition(p,this.Width * (j + 1), this.Height * (i + 1));
 
@@ -570,7 +280,9 @@ namespace PuzzlesProj
         }
                 
         private Stream LoadImage(string srcFileName)
-        {            
+        {
+            //Represents a single, constant set of pixels at a certain size and resolution.
+            //Also optimized for loading images using Extensible Application Markup Language (XAML).
             imageSource = new BitmapImage(new Uri(srcFileName));
 
             this.Width = (int)imageSource.Width / columns;
@@ -584,7 +296,7 @@ namespace PuzzlesProj
             imgBrush.AlignmentY = AlignmentY.Top;
             imgBrush.Stretch = Stretch.None;
             
-            //даний об'єк дає можливість перетворити ресурс Visual в bmp
+            //даний об'єк дає можливість перетворити об'єкт Visual в bmp
             RenderTargetBitmap rtb = new RenderTargetBitmap(columns * Width, rows * Height, 96, 96, PixelFormats.Pbgra32);                        
 
             var rectImage = new System.Windows.Shapes.Rectangle();
@@ -594,8 +306,8 @@ namespace PuzzlesProj
             rectImage.VerticalAlignment = VerticalAlignment.Top;
             rectImage.Fill = imgBrush;
             rectImage.Arrange(new Rect(0, 0, imageSource.PixelWidth, imageSource.PixelHeight));
-
-            //"ореол" довкола пазла
+            
+            //ореол довкола пазла
             rectImage.Margin = new Thickness(
                 (columns * Width - imageSource.PixelWidth) / 2,
                 (rows * Height - imageSource.PixelHeight) / 2,
@@ -608,12 +320,15 @@ namespace PuzzlesProj
             png.Frames.Add(BitmapFrame.Create(rtb));
 
             Stream ret = new MemoryStream();
+
+            //Encodes a bitmap image to a specified stream
             png.Save(ret);
 
             return ret;
         }
 
         
+        //перевірка на те, чи пазл складено
         private bool IsPuzzleCompleted()
         {            
             var query = from p in pieces
@@ -680,8 +395,7 @@ namespace PuzzlesProj
 
             return ret;
         }
-
-        //проблема з перевернутим пазлом
+        
         private System.Windows.Point SetCurrentPiecePosition(Piece currentPiece, double newX, double newY)
         {
             double cellX = (int)((newX) / Width);
@@ -710,8 +424,8 @@ namespace PuzzlesProj
             rectSelection.Visibility = Visibility.Hidden;
             rectSelection.Width = width;
             rectSelection.Height = height;
-            rectSelection.StrokeThickness = 4;
-            rectSelection.Stroke = new SolidColorBrush(Colors.Red);
+            //rectSelection.StrokeThickness = 1;
+            //rectSelection.Stroke = new SolidColorBrush(Colors.Red);
                    
             rectSelection.SetValue(Canvas.LeftProperty, x);
             rectSelection.SetValue(Canvas.TopProperty, y);
@@ -720,7 +434,7 @@ namespace PuzzlesProj
         //extendable
         private void MouseUp()
         {
-            if (currentSelection == null)
+            if (currentSelection == null)//якщо рука пуста, то в неї береться пазл
             {
                 double x1 = (double)rectSelection.GetValue(Canvas.LeftProperty);
                 double y1 = (double)rectSelection.GetValue(Canvas.TopProperty);
@@ -752,7 +466,7 @@ namespace PuzzlesProj
                 }
                 SetSelectionRectangle(-1, -1, -1, -1);
             }
-            else
+            else//якщо ж непуста, то пазл ставться
             {
                 var newX = Mouse.GetPosition(cnvPuzzle).X;
                 var newY = Mouse.GetPosition(cnvPuzzle).Y;
@@ -769,7 +483,7 @@ namespace PuzzlesProj
 
                     currentSelection = null;
 
-                    if (IsPuzzleCompleted())//кожен раз, коли відпускаємо руку з пазлом, перевіряємо, чи пазл зібраний
+                    if (IsPuzzleCompleted())//кожен раз, коли відпускаємо руку з пазлом, перевіряю, чи пазл зібраний
                     {
                         allGood.Text = "Complited";
                         allGood.Foreground = System.Windows.Media.Brushes.DarkRed;
@@ -779,8 +493,7 @@ namespace PuzzlesProj
                         allGood.Text = "Not Complited";
                         allGood.Foreground = System.Windows.Media.Brushes.Black;
                     }
-                }
-                selectionAngle = 0;
+                }                
             }
         }        
         
@@ -790,14 +503,11 @@ namespace PuzzlesProj
             if (currentSelection != null)
             {                
                 currentSelection.Rotate(90);
-                shadowPieces[currentSelection.Index].Rotate(90);
-                
-                selectionAngle += 90;
-                if (selectionAngle == 360)
-                    selectionAngle = 0;
+                shadowPieces[currentSelection.Index].Rotate(90);                                
             }
         }
         
+        //підбирання шматка з WrapPanel
         void piece_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             alg.IsEnabled = false;
@@ -841,6 +551,7 @@ namespace PuzzlesProj
             }
         }
         
+        //підбирання шматка з Canvas
         void cnvPuzzle_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             alg.IsEnabled = false;
@@ -858,6 +569,7 @@ namespace PuzzlesProj
             }
         }                
         
+        //вибір пазла
         void cnvPuzzle_MouseDown(object sender, MouseButtonEventArgs e)
         {
             initialRectangleX = Mouse.GetPosition((IInputElement)sender).X;
