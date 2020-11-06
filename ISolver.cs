@@ -9,6 +9,6 @@ namespace PuzzlesProj
     interface ISolver
     {
         long totalCost(List<int> perm, List<List<int>> LR, List<List<int>> UD);
-        List<int> Solve(List<List<int>> LR, List<List<int>> UD, double coeff, int start_chunk);
+        List<int> Solve(List<List<int>> LR, List<List<int>> UD, double coeff, int start_chunk);        
     }
 }

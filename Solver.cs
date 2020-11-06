@@ -111,7 +111,7 @@ namespace PuzzlesProj
             return a.Item1 < b.Item1 ? a : b;
         }
 
-        public Tuple<double, double, double> Max(Tuple<double, double, double> a, Tuple<double, double, double> b)
+        private Tuple<double, double, double> Max(Tuple<double, double, double> a, Tuple<double, double, double> b)
         {
             if (a.Item1 > b.Item1)
                 return a;
@@ -134,9 +134,7 @@ namespace PuzzlesProj
         }
 
         public List<int> Solve(List<List<int>> LR, List<List<int>> UD, double coeff, int start_chunk)
-        {
-            int m = this.m;
-
+        {            
             int mnI = rows - 1;
             int mxI = rows - 1;
             int mnJ = columns - 1;

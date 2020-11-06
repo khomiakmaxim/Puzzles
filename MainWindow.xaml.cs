@@ -25,10 +25,11 @@ namespace PuzzlesProj
         List<Piece> pieces = new List<Piece>();
         List<Piece> shadowPieces = new List<Piece>();
         int columns;//кілкість колонок, на які все розбивається
-        int rows;//кількість рядків
+        int rows;
         new int Width;//ширина кожного пазла
-        new int Height;//висота
+        new int Height;
         double scale = 1.0;//коефіцієнт масштабування
+
         //BitmapSource represents a single, constant set of pixels at a certain size and resolution.
         BitmapImage imageSource;//картинка, яка розбивається на пазли
         string srcFileName = "";
@@ -42,7 +43,7 @@ namespace PuzzlesProj
         //перестановка, згенерована алгоритмом
         List<int> permResult = new List<int>();
 
-        PngBitmapEncoder png;//використовую для завантаження зображення
+        PngBitmapEncoder png;
         double initialRectangleX = 0;
         double initialRectangleY = 0;
         System.Windows.Shapes.Rectangle rectSelection = new System.Windows.Shapes.Rectangle();
@@ -65,9 +66,8 @@ namespace PuzzlesProj
                 Opacity = 0.5
             };
         }                                                
-
-        //даний метод створюєм пазли
-        private void CreatePuzzle(Stream streamSource)
+        
+        private void CreatePuzzle(Stream streamSource)//потік, який має зображення
         {
             zoomSlider.Value = 0.50;                                             
             png = null;            
@@ -84,7 +84,7 @@ namespace PuzzlesProj
             }
 
             //List<Pixel> - ряд пікселів
-            //List<List<Pixel>> - ряд рядів
+            //List<List<Pixel>> - ряд рядів пікселів
             chunks = new List<List<List<Pixel>>>();
 
             //перетворення bitmapImage в bitmap
@@ -131,14 +131,14 @@ namespace PuzzlesProj
 
                     var piece = new Piece(imageSource, x, y, rows, columns, false, index, scale);
                     piece.SetValue(Canvas.ZIndexProperty, 1000 + x * rows + y);
-                    //додаємо пару хендлерів
+                    
                     piece.MouseLeftButtonUp += new MouseButtonEventHandler(piece_MouseLeftButtonUp);
                     piece.MouseRightButtonUp += new MouseButtonEventHandler(piece_MouseRightButtonUp);                        
                     piece.Rotate(angle);
 
                     //відповідна тінь
                     var shadowPiece = new Piece(imageSource, x, y, rows, columns, false, index, scale);
-                    shadowPiece.SetValue(Canvas.ZIndexProperty, x * rows + y);//менше на 1000 від того, що її кидає
+                    shadowPiece.SetValue(Canvas.ZIndexProperty, x * rows + y);
                     shadowPiece.Rotate(angle);
                         
                     pieces.Add(piece);
@@ -153,7 +153,7 @@ namespace PuzzlesProj
             var tpl = slvr.Precalc(chunks);
             const long LINF = (long)1e18 + 47;
             Tuple<long, List<int>> best = new Tuple<long, List<int>>(LINF, slvr.Solve(tpl.Item1, tpl.Item2, 1, 0));
-            for (int i = 0; i < chunks.Count; ++i)
+            for (int i = 1; i < chunks.Count; ++i)
             {
                 Random rnd = new Random();
                 int coeff = rnd.Next(15, 35);
@@ -174,7 +174,7 @@ namespace PuzzlesProj
                 Random random = new Random();
 
                 p.ScaleTransform.ScaleX = 1.0;
-                p.ScaleTransform.ScaleY = 1.0;                
+                p.ScaleTransform.ScaleY = 1.0;
                 p.X = -1;
                 p.Y = -1;
                 p.IsSelected = false;                
@@ -182,7 +182,9 @@ namespace PuzzlesProj
                 pnlPickUp.Children.Insert(it++, p);//заповнюється wrapPanel                                
             }
             pieces = shuffledPieces;
-            List<int> actualPerm = new List<int>(columns * rows);            
+
+            //генерується відповідна перестановка елементів з wrapPanel
+            List<int> actualPerm = new List<int>(columns * rows);
             for (int iter = 0; iter < columns * rows; ++iter)
             {
                 var i = pieces.Where(p => p.Index == permResult[iter]).FirstOrDefault();
@@ -190,7 +192,7 @@ namespace PuzzlesProj
             }
 
             permResult = actualPerm;
-            
+
             rectSelection.SetValue(Canvas.ZIndexProperty, 5000);            
             cnvPuzzle.Children.Add(rectSelection);
         }
@@ -212,7 +214,7 @@ namespace PuzzlesProj
                     if (IsPuzzleCompleted())
                     {
                         allGood.Text = "Complited";
-                        allGood.Foreground = System.Windows.Media.Brushes.DarkRed;
+                        allGood.Foreground = System.Windows.Media.Brushes.BlanchedAlmond;
                     }
                     else
                     {
@@ -279,7 +281,7 @@ namespace PuzzlesProj
             imageSource = null;
         }
                 
-        private Stream LoadImage(string srcFileName)
+        private Stream LoadImage(string srcFileName)//нв вхід приходить стрічка з абсолютною назвою файлу
         {
             //Represents a single, constant set of pixels at a certain size and resolution.
             //Also optimized for loading images using Extensible Application Markup Language (XAML).
@@ -287,7 +289,8 @@ namespace PuzzlesProj
 
             this.Width = (int)imageSource.Width / columns;
             this.Height = (int)imageSource.Height / rows;
-            //копія попереднього
+
+            
             var bi = new BitmapImage(new Uri(srcFileName));
             //кисть якою замальовується пазл
             var imgBrush = new ImageBrush(bi);
@@ -305,23 +308,17 @@ namespace PuzzlesProj
             rectImage.HorizontalAlignment = HorizontalAlignment.Left;
             rectImage.VerticalAlignment = VerticalAlignment.Top;
             rectImage.Fill = imgBrush;
-            rectImage.Arrange(new Rect(0, 0, imageSource.PixelWidth, imageSource.PixelHeight));
-            
-            //ореол довкола пазла
-            rectImage.Margin = new Thickness(
-                (columns * Width - imageSource.PixelWidth) / 2,
-                (rows * Height - imageSource.PixelHeight) / 2,
-                (rows * Height - imageSource.PixelHeight) / 2,
-                (columns * Width - imageSource.PixelWidth) / 2);
+            rectImage.Arrange(new Rect(0, 0, imageSource.PixelWidth, imageSource.PixelHeight));            
             
             rtb.Render(rectImage);
 
             png = new PngBitmapEncoder();
             png.Frames.Add(BitmapFrame.Create(rtb));
 
-            Stream ret = new MemoryStream();
 
-            //Encodes a bitmap image to a specified stream
+            var ret = new MemoryStream();
+
+            //переганяє bitmapImage в відповідний потік
             png.Save(ret);
 
             return ret;
@@ -483,10 +480,10 @@ namespace PuzzlesProj
 
                     currentSelection = null;
 
-                    if (IsPuzzleCompleted())//кожен раз, коли відпускаємо руку з пазлом, перевіряю, чи пазл зібраний
+                    if (IsPuzzleCompleted())//кожен раз, коли відпускається рука з пазлом, перевіряється, чи пазл зібраний
                     {
                         allGood.Text = "Complited";
-                        allGood.Foreground = System.Windows.Media.Brushes.DarkRed;
+                        allGood.Foreground = System.Windows.Media.Brushes.BlanchedAlmond;
                     }
                     else
                     {
@@ -506,8 +503,7 @@ namespace PuzzlesProj
                 shadowPieces[currentSelection.Index].Rotate(90);                                
             }
         }
-        
-        //підбирання шматка з WrapPanel
+               
         void piece_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             alg.IsEnabled = false;
@@ -554,6 +550,8 @@ namespace PuzzlesProj
         //підбирання шматка з Canvas
         void cnvPuzzle_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
+            allGood.Text = "Not Complited";
+            allGood.Foreground = System.Windows.Media.Brushes.Black;
             alg.IsEnabled = false;
             MouseUp();
         }
@@ -562,10 +560,7 @@ namespace PuzzlesProj
         {
             if (currentSelection != null)
             {                
-                currentSelection.Visibility = Visibility.Visible;
-                if (shadowPieces.Count > currentSelection.Index)
-                    shadowPieces[currentSelection.Index].Visibility = Visibility.Visible;
-                
+                currentSelection.Visibility = Visibility.Visible;                
             }
         }                
         
@@ -656,7 +651,7 @@ namespace PuzzlesProj
             var ofd = new OpenFileDialog()
             {
                 Filter = "All Image Files ( JPEG,GIF,BMP,PNG)|*.jpg;*.jpeg;*.gif;*.bmp;*.png|JPEG Files ( *.jpg;*.jpeg )|*.jpg;*.jpeg|GIF Files ( *.gif )|*.gif|BMP Files ( *.bmp )|*.bmp|PNG Files ( *.png )|*.png",
-                Title = "Select an image file for generating the puzzle"
+                Title = "Select image for a puzzle"
             };
 
             bool? result = ofd.ShowDialog(this);
@@ -667,7 +662,7 @@ namespace PuzzlesProj
                 {
                     DestroyReferences();
                     srcFileName = ofd.FileName;
-                    using (Stream streamSource = LoadImage(srcFileName))//
+                    using (Stream streamSource = LoadImage(srcFileName))
                     {
                         CreatePuzzle(streamSource);
                     }
