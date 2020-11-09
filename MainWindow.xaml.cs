@@ -114,6 +114,8 @@ namespace PuzzlesProj
                 }
             }                        
 
+            //на цьому етапі чанки вже є, тепер потрібно їх пошафлити так само, як і pieceSelection
+
             imgShowImage.Source = imageSource;
 
             scvImage.Visibility = Visibility.Hidden;
@@ -147,7 +149,12 @@ namespace PuzzlesProj
                 }
             }
 
+            //на цьому моменті встановлено нарізані шматки і чанки, всі вони є не пошафленими
+
             Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+
+            //цю частину можна винести в клас Solver
+            //і тоді все можна більшість можна буде інкапсулювати
 
             Solver slvr = new Solver(rows, columns, Width, Height);
             var tpl = slvr.Precalc(chunks);
