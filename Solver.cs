@@ -54,7 +54,7 @@ namespace PuzzlesProj
             return res;
         }
 
-        public Tuple<List<List<int>>, List<List<int>>> Precalc(List<List<List<Pixel>>> chunks)
+        private Tuple<List<List<int>>, List<List<int>>> Precalc(List<List<List<Pixel>>> chunks)
         {
             int m = chunks.Count;
 
@@ -87,7 +87,7 @@ namespace PuzzlesProj
             return new Tuple<List<List<int>>, List<List<int>>>(LR, UD);
         }
 
-        public long totalCost(List<int> perm, List<List<int>> LR, List<List<int>> UD)
+        private long totalCost(List<int> perm, List<List<int>> LR, List<List<int>> UD)
         {
             long res = 0;
 
@@ -106,7 +106,7 @@ namespace PuzzlesProj
             return res;
         }
 
-        public Tuple<long, List<int>> Min(Tuple<long, List<int>> a, Tuple<long, List<int>> b)
+        private Tuple<long, List<int>> Min(Tuple<long, List<int>> a, Tuple<long, List<int>> b)
         {
             return a.Item1 < b.Item1 ? a : b;
         }
@@ -133,7 +133,7 @@ namespace PuzzlesProj
             }
         }
 
-        public List<int> Solve(List<List<int>> LR, List<List<int>> UD, double coeff, int start_chunk)
+        private List<int> Solve(List<List<int>> LR, List<List<int>> UD, double coeff, int start_chunk)
         {            
             int mnI = rows - 1;
             int mxI = rows - 1;
@@ -295,6 +295,24 @@ namespace PuzzlesProj
 
 
             return perm;//вихідна готова перестановка
+        }
+
+        public List<int> GeneratePerm(List<List<List<Pixel>>> chunks)
+        {
+            List<int> permResult = new List<int>();
+
+            var tpl = Precalc(chunks);
+            const long LINF = (long)1e18 + 47;
+            Tuple<long, List<int>> best = new Tuple<long, List<int>>(LINF, Solve(tpl.Item1, tpl.Item2, 1, 0));
+            for (int i = 1; i < chunks.Count; ++i)
+            {
+                Random rnd = new Random();
+                int coeff = rnd.Next(15, 35);
+                permResult = Solve(tpl.Item1, tpl.Item2, (double)coeff / 10, i);
+                best = Min(best, new Tuple<long, List<int>>(totalCost(permResult, tpl.Item1, tpl.Item2), permResult));
+            }
+
+            return best.Item2;
         }
     }
 }

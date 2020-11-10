@@ -71,7 +71,7 @@ namespace PuzzlesProj
         {
             zoomSlider.Value = 0.50;                                             
             png = null;            
-            
+
             imageSource = null;                        
             using (BinaryReader reader = new BinaryReader(streamSource))
             {
@@ -112,9 +112,7 @@ namespace PuzzlesProj
 
                     chunks.Add(ch);
                 }
-            }                        
-
-            //на цьому етапі чанки вже є, тепер потрібно їх пошафлити так само, як і pieceSelection
+            }                                    
 
             imgShowImage.Source = imageSource;
 
@@ -128,20 +126,17 @@ namespace PuzzlesProj
             for (var y = 0; y < rows; ++y)
             {
                 for (var x = 0; x < columns; ++x)
-                {                                       
-                    int angle = 0;                   
+                {                                                                             
 
                     var piece = new Piece(imageSource, x, y, rows, columns, false, index, scale);
                     piece.SetValue(Canvas.ZIndexProperty, 1000 + x * rows + y);
                     
                     piece.MouseLeftButtonUp += new MouseButtonEventHandler(piece_MouseLeftButtonUp);
-                    piece.MouseRightButtonUp += new MouseButtonEventHandler(piece_MouseRightButtonUp);                        
-                    piece.Rotate(angle);
+                    piece.MouseRightButtonUp += new MouseButtonEventHandler(piece_MouseRightButtonUp);                                            
 
                     //відповідна тінь
                     var shadowPiece = new Piece(imageSource, x, y, rows, columns, false, index, scale);
-                    shadowPiece.SetValue(Canvas.ZIndexProperty, x * rows + y);
-                    shadowPiece.Rotate(angle);
+                    shadowPiece.SetValue(Canvas.ZIndexProperty, x * rows + y);                    
                         
                     pieces.Add(piece);
                     shadowPieces.Add(shadowPiece);
@@ -149,29 +144,11 @@ namespace PuzzlesProj
                 }
             }
 
-            //на цьому моменті встановлено нарізані шматки і чанки, всі вони є не пошафленими
-
             Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
 
-            //цю частину можна винести в клас Solver
-            //і тоді все можна більшість можна буде інкапсулювати
-
-            Solver slvr = new Solver(rows, columns, Width, Height);
-            var tpl = slvr.Precalc(chunks);
-            const long LINF = (long)1e18 + 47;
-            Tuple<long, List<int>> best = new Tuple<long, List<int>>(LINF, slvr.Solve(tpl.Item1, tpl.Item2, 1, 0));
-            for (int i = 1; i < chunks.Count; ++i)
-            {
-                Random rnd = new Random();
-                int coeff = rnd.Next(15, 35);
-                permResult = slvr.Solve(tpl.Item1, tpl.Item2, (double)coeff / 10, i);
-                best = slvr.Min(best, new Tuple<long, List<int>>(slvr.totalCost(permResult, tpl.Item1, tpl.Item2), permResult));
-            }
-
-            permResult = best.Item2;
-
+            ISolver slvr = new Solver(rows, columns, Width, Height);            
+            permResult = slvr.GeneratePerm(chunks);
             Mouse.OverrideCursor = null;
-
 
             var shuffledPieces = pieces.OrderBy(i => Guid.NewGuid()).ToList();
             int it = 0;            
@@ -216,22 +193,23 @@ namespace PuzzlesProj
                     var p = pieces.ElementAt(permResult[it++]);
                     pnlPickUp.Children.Remove(p);                    
                     cnvPuzzle.Children.Add(p);
-                    SetCurrentPiecePosition(p,this.Width * (j + 1), this.Height * (i + 1));
-
-                    if (IsPuzzleCompleted())
-                    {
-                        allGood.Text = "Complited";
-                        allGood.Foreground = System.Windows.Media.Brushes.BlanchedAlmond;
-                    }
-                    else
-                    {
-                        allGood.Text = "Not Complited";
-                        allGood.Foreground = System.Windows.Media.Brushes.Black;
-                    }
+                    SetCurrentPiecePosition(p,this.Width * (j + 1), this.Height * (i + 1));                    
                 }
+            }
+
+            if (IsPuzzleCompleted())
+            {
+                allGood.Text = "Complited";
+                allGood.Foreground = System.Windows.Media.Brushes.BlanchedAlmond;
+            }
+            else
+            {
+                allGood.Text = "Not Complited";
+                allGood.Foreground = System.Windows.Media.Brushes.Black;
             }
         }
 
+        //перетворення BitmapImage в Bitmap
         private Bitmap BitmapImage2Bitmap(BitmapImage bitmapImage)
         {            
             using (MemoryStream outStream = new MemoryStream())
@@ -288,7 +266,7 @@ namespace PuzzlesProj
             imageSource = null;
         }
                 
-        private Stream LoadImage(string srcFileName)//нв вхід приходить стрічка з абсолютною назвою файлу
+        private Stream LoadImage(string srcFileName)//на вхід приходить стрічка з абсолютною назвою файлу
         {
             //Represents a single, constant set of pixels at a certain size and resolution.
             //Also optimized for loading images using Extensible Application Markup Language (XAML).
@@ -298,9 +276,9 @@ namespace PuzzlesProj
             this.Height = (int)imageSource.Height / rows;
 
             
-            var bi = new BitmapImage(new Uri(srcFileName));
+            //var bi = new BitmapImage(new Uri(srcFileName));
             //кисть якою замальовується пазл
-            var imgBrush = new ImageBrush(bi);
+            var imgBrush = new ImageBrush(imageSource);
             
             imgBrush.AlignmentX = AlignmentX.Left;
             imgBrush.AlignmentY = AlignmentY.Top;
@@ -386,7 +364,7 @@ namespace PuzzlesProj
             
             var q = from p in pieces//фільтруємо шматки
                     where (                            
-                            (p.Index != currentSelection.Index) &&//очевидно що їх перевіряти не потрібно
+                            (p.Index != currentSelection.Index) &&
                             (!p.IsSelected) &&                                
                             (((p.X == cellX) && (p.Y == cellY)))                              
                            )
@@ -427,9 +405,7 @@ namespace PuzzlesProj
             double height = Math.Abs(y2 - y1);
             rectSelection.Visibility = Visibility.Hidden;
             rectSelection.Width = width;
-            rectSelection.Height = height;
-            //rectSelection.StrokeThickness = 1;
-            //rectSelection.Stroke = new SolidColorBrush(Colors.Red);
+            rectSelection.Height = height;            
                    
             rectSelection.SetValue(Canvas.LeftProperty, x);
             rectSelection.SetValue(Canvas.TopProperty, y);
