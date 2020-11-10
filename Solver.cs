@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PuzzlesProj
 {
@@ -299,7 +297,7 @@ namespace PuzzlesProj
 
         public List<int> GeneratePerm(List<List<List<Pixel>>> chunks)
         {
-            List<int> permResult = new List<int>();
+            List<int> permResult;
 
             var tpl = Precalc(chunks);
             const long LINF = (long)1e18 + 47;

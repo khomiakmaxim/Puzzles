@@ -9,9 +9,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using Microsoft.Win32;
-using static PuzzlesProj.Piece;
 
 namespace PuzzlesProj
 {
@@ -167,7 +165,7 @@ namespace PuzzlesProj
             }
             pieces = shuffledPieces;
 
-            //генерується відповідна перестановка елементів з wrapPanel
+            //генерується відповідна перестановка елементів з wrapPanel, на основі тої, яку алгоритм вважає найкращою
             List<int> actualPerm = new List<int>(columns * rows);
             for (int iter = 0; iter < columns * rows; ++iter)
             {
@@ -266,7 +264,7 @@ namespace PuzzlesProj
             imageSource = null;
         }
                 
-        private Stream LoadImage(string srcFileName)//на вхід приходить стрічка з абсолютною назвою файлу
+        private Stream LoadImage(string srcFileName)
         {
             //Represents a single, constant set of pixels at a certain size and resolution.
             //Also optimized for loading images using Extensible Application Markup Language (XAML).
@@ -275,16 +273,15 @@ namespace PuzzlesProj
             this.Width = (int)imageSource.Width / columns;
             this.Height = (int)imageSource.Height / rows;
 
-            
-            //var bi = new BitmapImage(new Uri(srcFileName));
+
+            var bi = new BitmapImage(new Uri(srcFileName));
             //кисть якою замальовується пазл
             var imgBrush = new ImageBrush(imageSource);
             
             imgBrush.AlignmentX = AlignmentX.Left;
             imgBrush.AlignmentY = AlignmentY.Top;
             imgBrush.Stretch = Stretch.None;
-            
-            //даний об'єк дає можливість перетворити об'єкт Visual в bmp
+                        
             RenderTargetBitmap rtb = new RenderTargetBitmap(columns * Width, rows * Height, 96, 96, PixelFormats.Pbgra32);                        
 
             var rectImage = new System.Windows.Shapes.Rectangle();
@@ -355,9 +352,7 @@ namespace PuzzlesProj
         }
              
         private bool TrySetCurrentPiecePosition(double newX, double newY)
-        {
-            bool ret = true;
-
+        {            
             //cellX і cellY - позиціонування в пазлових одиницях
             double cellX = (int)((newX) / Width);
             double cellY = (int)((newY) / Height);                        
@@ -370,12 +365,10 @@ namespace PuzzlesProj
                            )
                     select p;
 
-            if (q.Any())//якщо хоча б один шматок підпадає - сюди вставлти не можна
-            {
-                ret = false;                    
-            }            
+            if (q.Any())            
+                return false;            
 
-            return ret;
+            return true;
         }
         
         private System.Windows.Point SetCurrentPiecePosition(Piece currentPiece, double newX, double newY)
@@ -389,8 +382,7 @@ namespace PuzzlesProj
             //якраз таки ставимо пазлик на відповідну позицію
             currentPiece.SetValue(Canvas.LeftProperty, currentPiece.X * Width);
             currentPiece.SetValue(Canvas.TopProperty, currentPiece.Y * Height);
-
-            //цей ставиться туди ж
+            
             shadowPieces[currentPiece.Index].SetValue(Canvas.LeftProperty, currentPiece.X * Width);
             shadowPieces[currentPiece.Index].SetValue(Canvas.TopProperty, currentPiece.Y * Height);
 
@@ -412,7 +404,7 @@ namespace PuzzlesProj
         }
              
         //extendable
-        private void MouseUp()
+        private new void MouseUp()
         {
             if (currentSelection == null)//якщо рука пуста, то в неї береться пазл
             {
@@ -546,8 +538,7 @@ namespace PuzzlesProj
                 currentSelection.Visibility = Visibility.Visible;                
             }
         }                
-        
-        //вибір пазла
+                
         void cnvPuzzle_MouseDown(object sender, MouseButtonEventArgs e)
         {
             initialRectangleX = Mouse.GetPosition((IInputElement)sender).X;
@@ -687,13 +678,6 @@ namespace PuzzlesProj
                 alg.IsEnabled = false;
                 SetAll();
             }
-        }
-     
-        public enum ViewMode
-        { 
-            Picture,
-            Puzzle
-        }
-
+        }             
     }
 }
