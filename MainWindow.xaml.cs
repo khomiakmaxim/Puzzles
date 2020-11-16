@@ -93,7 +93,7 @@ namespace PuzzlesProj
             // TODO: use extension methods to handle conversion
 
             //перетворення bitmapImage в bitmap
-            Bitmap alg = (imageSource);
+            Bitmap alg = BitmapImage2Bitmap(imageSource);
             for (int i = 0; i < rows; ++i)
             {
                 for (int j = 0; j < columns; ++j)
