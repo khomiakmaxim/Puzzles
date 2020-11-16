@@ -43,8 +43,8 @@ namespace PuzzlesProj
 
         PngBitmapEncoder png;
         double initialRectangleX = 0;
-        double initialRectangleY = 0;
-        System.Windows.Shapes.Rectangle rectSelection = new System.Windows.Shapes.Rectangle();
+        double initialRectangleY = 0;        
+        System.Windows.Shapes.Rectangle rSelection = new System.Windows.Shapes.Rectangle();        
         public MainWindow()
         {
             InitializeComponent();
@@ -110,7 +110,13 @@ namespace PuzzlesProj
 
                     chunks.Add(ch);
                 }
-            }                                    
+            }
+
+            rSelection.SetValue(Canvas.ZIndexProperty, 5000);
+            cnvPuzzle.Children.Add(rSelection);
+
+            //на даному етапі всі чанки в такому ж порядку, як і шматки
+            //їх потрібно перемішати у відповідності до тих, що будуть на панелі вибору
 
             imgShowImage.Source = imageSource;
 
@@ -142,45 +148,50 @@ namespace PuzzlesProj
                 }
             }
 
-            Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
-
-            ISolver slvr = new Solver(rows, columns, Width, Height);            
-            permResult = slvr.GeneratePerm(chunks);
-            Mouse.OverrideCursor = null;
+            List<Tuple<List<List<Pixel>>, Piece>> honesty = new List<Tuple<List<List<Pixel>>, Piece>>();
+            for (int i = 0; i < pieces.Count; ++i)
+            {
+                honesty.Add(new Tuple<List<List<Pixel>>, Piece>(chunks[i], pieces[i]));
+            }
 
             var shuffledPieces = pieces.OrderBy(i => Guid.NewGuid()).ToList();
-            int it = 0;            
+            var shuffled = honesty.OrderBy(i => Guid.NewGuid()).ToList();
+            int it = 0;
             //заповнення панелі вибору
-            foreach (var p in shuffledPieces)
+            foreach (var p in shuffled)
             {
                 Random random = new Random();
 
-                p.ScaleTransform.ScaleX = 1.0;
-                p.ScaleTransform.ScaleY = 1.0;
-                p.X = -1;
-                p.Y = -1;
-                p.IsSelected = false;                
+                p.Item2.ScaleTransform.ScaleX = 1.0;
+                p.Item2.ScaleTransform.ScaleY = 1.0;
+                p.Item2.X = -1;
+                p.Item2.Y = -1;
+                p.Item2.IsSelected = false;
 
-                pnlPickUp.Children.Insert(it++, p);//заповнюється wrapPanel                                
+                pnlPickUp.Children.Insert(it++, p.Item2);//заповнюється wrapPanel                                
             }
-            pieces = shuffledPieces;
 
-            //генерується відповідна перестановка елементів з wrapPanel, на основі тої, яку алгоритм вважає найкращою
-            List<int> actualPerm = new List<int>(columns * rows);
-            for (int iter = 0; iter < columns * rows; ++iter)
+            for (int i = 0; i < pieces.Count; ++i)
             {
-                var i = pieces.Where(p => p.Index == permResult[iter]).FirstOrDefault();
-                actualPerm.Add(pieces.IndexOf(i));
+                pieces[i] = shuffled[i].Item2;
             }
 
-            permResult = actualPerm;
+            for (int i = 0; i < chunks.Count; ++i)
+            {
+                chunks[i] = shuffled[i].Item1;
+            }
 
-            rectSelection.SetValue(Canvas.ZIndexProperty, 5000);            
-            cnvPuzzle.Children.Add(rectSelection);
+            Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+            ISolver slvr = new Solver(rows, columns, Width, Height);            
+            permResult = slvr.GeneratePerm(chunks);
+            Mouse.OverrideCursor = null;
+            
+            //permResult - така перестановка, яка отримала на вхід пошафлені дані і згенерувала таку перестановку,
+            //яку вважає складеним пазлом                        
         }
 
         //складання пазлу в залежності від перестановки, яку видав алгоритм
-        private void SetAll()
+        private void SetAll()//permResult - перестановка wrapPanel, яку алгоритм вважає оптимальною
         {
             int it = 0;
 
@@ -263,7 +274,7 @@ namespace PuzzlesProj
             imgShowImage.Source = null;
             imageSource = null;
         }
-                
+                        
         private Stream LoadImage(string srcFileName)
         {
             //Represents a single, constant set of pixels at a certain size and resolution.
@@ -371,10 +382,11 @@ namespace PuzzlesProj
             return true;
         }
         
+        //позиціонування відповідного пазла на полотні
         private System.Windows.Point SetCurrentPiecePosition(Piece currentPiece, double newX, double newY)
         {
-            double cellX = (int)((newX) / Width);
-            double cellY = (int)((newY) / Height);            
+            double cellX = (int)((newX) / Width);//позиції вставки
+            double cellY = (int)((newY) / Height);//в пазлових одиницях
 
             currentPiece.X = cellX;//переписуємо позиціонування пазла
             currentPiece.Y = cellY;
@@ -388,19 +400,21 @@ namespace PuzzlesProj
 
             return new System.Windows.Point(cellX, cellY);
         }
-                
+        
+        //ось цей метод потрібно переписати
+        //ось цього методу взагалі не потрібно
         private void SetSelectionRectangle(double x1, double y1, double x2, double y2)
         {            
-            double x = (x2 >= x1) ? x1 : x2;
-            double y = (y2 >= y1) ? y1 : y2;
+            double x = (x2 >= x1) ? x1 : x2;//верхня точка
+            double y = (y2 >= y1) ? y1 : y2;//
             double width = Math.Abs(x2 - x1);
             double height = Math.Abs(y2 - y1);
-            rectSelection.Visibility = Visibility.Hidden;
-            rectSelection.Width = width;
-            rectSelection.Height = height;            
+            rSelection.Visibility = Visibility.Hidden;
+            rSelection.Width = width;
+            rSelection.Height = height;            
                    
-            rectSelection.SetValue(Canvas.LeftProperty, x);
-            rectSelection.SetValue(Canvas.TopProperty, y);
+            rSelection.SetValue(Canvas.LeftProperty, x);
+            rSelection.SetValue(Canvas.TopProperty, y);
         }
              
         //extendable
@@ -408,10 +422,11 @@ namespace PuzzlesProj
         {
             if (currentSelection == null)//якщо рука пуста, то в неї береться пазл
             {
-                double x1 = (double)rectSelection.GetValue(Canvas.LeftProperty);
-                double y1 = (double)rectSelection.GetValue(Canvas.TopProperty);
-                double x2 = x1 + rectSelection.Width;
-                double y2 = y1 + rectSelection.Height;
+                //оце можна замінити точкою
+                double x1 = (double)rSelection.GetValue(Canvas.LeftProperty);
+                double y1 = (double)rSelection.GetValue(Canvas.TopProperty);
+                double x2 = x1 + rSelection.Width;
+                double y2 = y1 + rSelection.Height;
                 
                 int cellX1 = (int)(x1 / Width);
                 int cellY1 = (int)(y1 / Height);

@@ -17,7 +17,7 @@ namespace PuzzlesProj
         double x;
         double y;        
         double angle = 0;//кут повороту в градусах                                                        
-        int index = 0;//індекс даного пазлу(>, v)
+        int index = 0;//індекс даного пазлу(>v)
 
         //для різного роду трансформацій
         TranslateTransform tt1;
@@ -32,7 +32,7 @@ namespace PuzzlesProj
         public double InitialX { get { return initialX; } set { initialX = value; } }
         public double InitialY { get { return initialY; } set { initialY = value; } }        
         public double Angle { get { return angle; } set { angle = value; } }
-        public int Index { get{return index; } set { index = value; } }
+        public int Index { get{ return index; } set { index = value; } }
         public bool IsSelected { get; set; }
         public ScaleTransform ScaleTransform{ get; set; }
         #endregion properties
