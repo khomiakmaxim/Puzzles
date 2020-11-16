@@ -53,6 +53,7 @@ namespace PuzzlesProj
 
             this.ScaleTransform = new ScaleTransform() { ScaleX = 1.0, ScaleY = 1.0 };
             
+            // TODO: move to separate method for path initialization
             path = new Path
             {
                 Stroke = new SolidColorBrush(Colors.Gray),
@@ -66,7 +67,8 @@ namespace PuzzlesProj
 
             var imageScaleTransform = ScaleTransform;
             
-            path.Fill = new ImageBrush//пазл замальовуватиметься частинами оригінльного зображення
+            // TODO: move to separate method for brush initialization
+            path.Fill = new ImageBrush // пазл замальовуватиметься частинами оригінльного зображення
             {
                 ImageSource = imageSource,
                 Stretch = Stretch.UniformToFill,               
@@ -82,12 +84,13 @@ namespace PuzzlesProj
                 Transform = imageScaleTransform
             };
                        
-
+            // TODO: move to separate method for GeometryGroup creation and setup
             GeometryGroup gg = new GeometryGroup();
             gg.Children.Add(new RectangleGeometry(new Rect(0, 0, Width, Height)));                                
             path.Data = gg;
             shadowPath.Data = gg;
 
+            // TODO: separate method 
             var rt = new RotateTransform
             { 
                 CenterX = 3,
@@ -117,10 +120,11 @@ namespace PuzzlesProj
 
             shadowPath.RenderTransform = tg2;
 
-                                
+            // TODO: separate method                    
             this.Width = Width * scale;
             this.Height = Height * scale;
             
+            // TODO: separate method (like setupShadow())                  
             if (isShadow)
                 this.Children.Add(shadowPath);
             else

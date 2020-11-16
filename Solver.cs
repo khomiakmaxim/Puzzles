@@ -131,6 +131,7 @@ namespace PuzzlesProj
             }
         }
 
+        // TODO: add link to algorithm used for reference
         private List<int> Solve(List<List<int>> LR, List<List<int>> UD, double coeff, int start_chunk)
         {            
             int mnI = rows - 1;
@@ -155,6 +156,7 @@ namespace PuzzlesProj
             used[start_chunk] = true;
             ans[rows - 1][columns - 1] = start_chunk;
 
+            // TODO: use type aliases or even create simple data class
             //усі можливі сусіди першого чанка(верхній, правий, ...)
             List<Tuple<int, int>> neighbours = new List<Tuple<int, int>>();
             List<Tuple<int, int, char>> MT = new List<Tuple<int, int, char>>

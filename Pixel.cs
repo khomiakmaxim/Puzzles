@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace PuzzlesProj
 {
+    // TODO: use <summary>
     //даний клас відповідає за кожний окремий піксель зображення
     public class Pixel
     {
@@ -17,6 +18,7 @@ namespace PuzzlesProj
         public int Green { get { return green; } set { green = value; } }
         public int Blue { get { return blue; } set { blue = value; } }        
 
+        // TODO: remove useless constructor?
         public Pixel()
         {
         }
@@ -33,6 +35,7 @@ namespace PuzzlesProj
             return (int) (0.3 * red + 0.59 * green + 0.11 * blue);
         }
 
+    // TODO: fix formatting
     public override string ToString()
         {
             return gray_scale() + "\n";

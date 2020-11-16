@@ -414,6 +414,7 @@ namespace PuzzlesProj
             return new System.Windows.Point(cellX, cellY);
         }
         
+        // TODO: remove
         //ось цей метод потрібно переписати
         //ось цього методу взагалі не потрібно
         private void SetSelectionRectangle(double x1, double y1, double x2, double y2)
