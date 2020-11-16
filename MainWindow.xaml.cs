@@ -48,13 +48,14 @@ namespace PuzzlesProj
         public MainWindow()
         {
             InitializeComponent();
-
+            // TODO: move to a separate lifecycle method
             cnvPuzzle.MouseLeftButtonUp += new MouseButtonEventHandler(cnvPuzzle_MouseLeftButtonUp);
             cnvPuzzle.MouseDown += new MouseButtonEventHandler(cnvPuzzle_MouseDown);
             cnvPuzzle.MouseMove += new MouseEventHandler(cnvPuzzle_MouseMove);
             cnvPuzzle.MouseEnter += new MouseEventHandler(cnvPuzzle_MouseEnter);
             cnvPuzzle.MouseLeave += new MouseEventHandler(cnvPuzzle_MouseLeave);
-
+            
+            // TODO: move to a separate lifecycle method
             shadowEffect = new DropShadowBitmapEffect()
             {
                 Color = Colors.Black,
@@ -81,9 +82,15 @@ namespace PuzzlesProj
                 imageSource.Freeze();
             }
 
+            // TODO: use aliases to simplify nested generics
+            // using PixelRow = List<Pixel>
+            // using Image = List<PixelRow>
+
             //List<Pixel> - ряд пікселів
             //List<List<Pixel>> - ряд рядів пікселів
             chunks = new List<List<List<Pixel>>>();
+
+            // TODO: use extension methods to handle conversion
 
             //перетворення bitmapImage в bitmap
             Bitmap alg = BitmapImage2Bitmap(imageSource);
@@ -218,6 +225,8 @@ namespace PuzzlesProj
             }
         }
 
+        // TODO: put into extension method instead
+
         //перетворення BitmapImage в Bitmap
         private Bitmap BitmapImage2Bitmap(BitmapImage bitmapImage)
         {            
@@ -235,6 +244,7 @@ namespace PuzzlesProj
         //скидання всіх можливих прив'язок, потірбне при створенні нового пазлу
         private void DestroyReferences()
         {
+            // TODO: use foreach with cnvPuzzle.Childen
             for (var i = cnvPuzzle.Children.Count - 1; i >= 0; i--)
             {                
                 if (cnvPuzzle.Children[i] is Piece)
@@ -249,6 +259,7 @@ namespace PuzzlesProj
             cnvPuzzle.Children.Clear();
             SetSelectionRectangle(-1, -1, -1, -1);
 
+            // TODO: use foreach
             for (var i = pnlPickUp.Children.Count - 1; i >= 0; i--)
             {
                 Piece p = (Piece)pnlPickUp.Children[i];
@@ -259,6 +270,7 @@ namespace PuzzlesProj
 
             pnlPickUp.Children.Clear();
 
+            // TODO: use foreach
             for (var i = pieces.Count - 1; i >= 0; i--)
             {
                 pieces[i].ClearImage();
@@ -382,6 +394,7 @@ namespace PuzzlesProj
             return true;
         }
         
+        // TODO: do not use fully qualified class names (System.Windows.Point)
         //позиціонування відповідного пазла на полотні
         private System.Windows.Point SetCurrentPiecePosition(Piece currentPiece, double newX, double newY)
         {
@@ -401,6 +414,7 @@ namespace PuzzlesProj
             return new System.Windows.Point(cellX, cellY);
         }
         
+        // TODO: remove
         //ось цей метод потрібно переписати
         //ось цього методу взагалі не потрібно
         private void SetSelectionRectangle(double x1, double y1, double x2, double y2)
