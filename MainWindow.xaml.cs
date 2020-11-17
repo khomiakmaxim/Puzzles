@@ -44,7 +44,7 @@ namespace PuzzlesProj
         PngBitmapEncoder png;
         double initialRectangleX = 0;
         double initialRectangleY = 0;        
-        System.Windows.Shapes.Rectangle rSelection = new System.Windows.Shapes.Rectangle();        
+        System.Windows.Shapes.Rectangle rSelection = new System.Windows.Shapes.Rectangle();
         public MainWindow()
         {
             InitializeComponent();
@@ -63,14 +63,14 @@ namespace PuzzlesProj
                 Softness = 1,
                 Opacity = 0.5
             };
-        }                                                
+        }                                          
         
         private void CreatePuzzle(Stream streamSource)//потік, який має зображення
         {
-            zoomSlider.Value = 0.50;                                             
-            png = null;            
+            zoomSlider.Value = .5;                                          
+            png = null;
 
-            imageSource = null;                        
+            imageSource = null;                       
             using (BinaryReader reader = new BinaryReader(streamSource))
             {
                 imageSource = new BitmapImage();
@@ -79,7 +79,7 @@ namespace PuzzlesProj
                 imageSource.StreamSource = reader.BaseStream;
                 imageSource.EndInit();
                 imageSource.Freeze();
-            }
+            }  
 
             //List<Pixel> - ряд пікселів
             //List<List<Pixel>> - ряд рядів пікселів
@@ -114,9 +114,7 @@ namespace PuzzlesProj
 
             rSelection.SetValue(Canvas.ZIndexProperty, 5000);
             cnvPuzzle.Children.Add(rSelection);
-
-            //на даному етапі всі чанки в такому ж порядку, як і шматки
-            //їх потрібно перемішати у відповідності до тих, що будуть на панелі вибору
+            
 
             imgShowImage.Source = imageSource;
 
@@ -147,6 +145,7 @@ namespace PuzzlesProj
                     index++;               
                 }
             }
+            
 
             List<Tuple<List<List<Pixel>>, Piece>> honesty = new List<Tuple<List<List<Pixel>>, Piece>>();
             for (int i = 0; i < pieces.Count; ++i)
@@ -401,8 +400,7 @@ namespace PuzzlesProj
             return new System.Windows.Point(cellX, cellY);
         }
         
-        //ось цей метод потрібно переписати
-        //ось цього методу взагалі не потрібно
+        
         private void SetSelectionRectangle(double x1, double y1, double x2, double y2)
         {            
             double x = (x2 >= x1) ? x1 : x2;//верхня точка
