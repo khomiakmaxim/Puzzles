@@ -17,8 +17,7 @@ namespace PuzzlesProj
     {        
         //шматок пазла, який на даний момент в руці-
         Piece currentSelection;      
-        List<Piece> pieces = new List<Piece>();//всі шматки, які є наявними
-        List<Piece> shadowPieces = new List<Piece>();//всі тіневі шматки, які є наявними
+        List<Piece> pieces = new List<Piece>();//всі шматки, які є наявними        
         int columns;//кілкість колонок, на які все розбивається
         int rows;
         new int Width;//ширина кожного пазла
@@ -132,12 +131,8 @@ namespace PuzzlesProj
                     piece.MouseLeftButtonUp += new MouseButtonEventHandler(piece_MouseLeftButtonUp);
                     piece.MouseRightButtonUp += new MouseButtonEventHandler(piece_MouseRightButtonUp);                                            
 
-                    //відповідна тінь
-                    var shadowPiece = new Piece(imageSource, x, y, rows, columns, false, index, scale);
-                    shadowPiece.SetValue(Canvas.ZIndexProperty, x * rows + y);                   
                         
                     pieces.Add(piece);
-                    shadowPieces.Add(shadowPiece);
                     index++;             
                 }
             }
@@ -257,13 +252,7 @@ namespace PuzzlesProj
             {
                 pieces[i].ClearImage();
             }
-
-            for (var i = shadowPieces.Count - 1; i >= 0; i--)
-            {
-                shadowPieces[i].ClearImage();
-            }
-
-            shadowPieces.Clear();
+            
             pieces.Clear();
             imgShowImage.Source = null;
             imageSource = null;
@@ -344,11 +333,7 @@ namespace PuzzlesProj
         private void ResetZIndexes()
         {
             int zIndex = 0;
-            foreach (var p in shadowPieces)
-            {
-                p.SetValue(Canvas.ZIndexProperty, zIndex);
-                zIndex++;
-            }
+            
             foreach (var p in pieces)
             {
                 p.SetValue(Canvas.ZIndexProperty, zIndex);
@@ -389,8 +374,6 @@ namespace PuzzlesProj
             currentPiece.SetValue(Canvas.LeftProperty, currentPiece.X * Width);
             currentPiece.SetValue(Canvas.TopProperty, currentPiece.Y * Height);
             
-            shadowPieces[currentPiece.Index].SetValue(Canvas.LeftProperty, currentPiece.X * Width);
-            shadowPieces[currentPiece.Index].SetValue(Canvas.TopProperty, currentPiece.Y * Height);
 
             return new System.Windows.Point(cellX, cellY);
         }
@@ -413,9 +396,8 @@ namespace PuzzlesProj
         //extendable
         private new void MouseUp()
         {
-            if (currentSelection == null)//якщо рука пуста, то в неї береться пазл
-            {
-                //оце можна замінити точкою
+            if (currentSelection == null)
+            {                
                 double x1 = (double)rSelection.GetValue(Canvas.LeftProperty);
                 double y1 = (double)rSelection.GetValue(Canvas.TopProperty);
                 double x2 = x1 + rSelection.Width;
@@ -437,16 +419,14 @@ namespace PuzzlesProj
                     currentSelection = currentPiece;
 
                     currentPiece.SetValue(Canvas.ZIndexProperty, 5000);
-                    shadowPieces[currentPiece.Index].SetValue(Canvas.ZIndexProperty, 4999);
                     currentPiece.BitmapEffect = shadowEffect;
 
                     currentPiece.RenderTransform = stZoomed;
                     currentPiece.IsSelected = true;
-                    shadowPieces[currentPiece.Index].RenderTransform = stZoomed;
                 }
                 SetSelectionRectangle(-1, -1, -1, -1);
             }
-            else//якщо ж непуста, то пазл ставться
+            else
             {
                 var newX = Mouse.GetPosition(cnvPuzzle).X;
                 var newY = Mouse.GetPosition(cnvPuzzle).Y;
@@ -456,7 +436,6 @@ namespace PuzzlesProj
                     ScaleTransform st = new ScaleTransform() { ScaleX = 1.0, ScaleY = 1.0 };
                     currentSelection.RenderTransform = st;
                     currentSelection.IsSelected = false;
-                    shadowPieces[currentSelection.Index].RenderTransform = st;
 
                     SetCurrentPiecePosition(currentSelection, newX, newY);
                     ResetZIndexes();                                       
@@ -483,22 +462,23 @@ namespace PuzzlesProj
             if (currentSelection != null)
             {                
                 currentSelection.Rotate(90);
-                shadowPieces[currentSelection.Index].Rotate(90);                                
             }
         }
                
+
+        //обробник події натиску мишки на пазлик
         void piece_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             alg.IsEnabled = false;
             var chosenPiece = (Piece)sender;
 
-            if (chosenPiece.Parent is WrapPanel)
+            if (chosenPiece.Parent is WrapPanel)//якщо вибраний шматок знаходиться на 
+                //полотні вибору
             {
-                if (currentSelection != null)
+                if (currentSelection != null)//якщо вже є пазлик в руці
                 {
                     var p = currentSelection;
                     cnvPuzzle.Children.Remove(p);
-                    cnvPuzzle.Children.Remove(shadowPieces[p.Index]);
 
                     var tt = new TranslateTransform() { X = -1, Y = -1 };
                     p.ScaleTransform.ScaleX = 1.0;
@@ -514,16 +494,12 @@ namespace PuzzlesProj
                 }
                 else//якщо в руці пазла немає, то кладемо в неї пазл, на який наведена мишка
                 {
-                    pnlPickUp.Children.Remove(chosenPiece);//видалення з панелі вибору
-                    cnvPuzzle.Children.Add(shadowPieces[chosenPiece.Index]);//додавання на полотно
+                    pnlPickUp.Children.Remove(chosenPiece);
                     chosenPiece.SetValue(Canvas.ZIndexProperty, 5000);
-                    shadowPieces[chosenPiece.Index].SetValue(Canvas.ZIndexProperty, 4999);
                     chosenPiece.BitmapEffect = shadowEffect;
                     chosenPiece.RenderTransform = stZoomed;
-                    shadowPieces[chosenPiece.Index].RenderTransform = stZoomed;
                     cnvPuzzle.Children.Add(chosenPiece);
                     chosenPiece.Visibility = Visibility.Hidden;
-                    shadowPieces[chosenPiece.Index].Visibility = Visibility.Hidden;
                     chosenPiece.IsSelected = true;
                     currentSelection = chosenPiece;
                 }
@@ -536,7 +512,7 @@ namespace PuzzlesProj
             allGood.Text = "Not Complited";
             allGood.Foreground = System.Windows.Media.Brushes.Black;
             alg.IsEnabled = false;
-            MouseUp();
+            MouseUp();//малюється тінь і схоже
         }
         
         void cnvPuzzle_MouseEnter(object sender, MouseEventArgs e)
@@ -577,8 +553,6 @@ namespace PuzzlesProj
                     currentSelection.SetValue(Canvas.LeftProperty, newX);
                     currentSelection.SetValue(Canvas.TopProperty, newY);
 
-                    shadowPieces[currentSelection.Index].SetValue(Canvas.LeftProperty, newX);
-                    shadowPieces[currentSelection.Index].SetValue(Canvas.TopProperty, newY);                    
                 }
             }
         }
@@ -591,7 +565,6 @@ namespace PuzzlesProj
             {                
                     var p = currentSelection;
                     cnvPuzzle.Children.Remove(p);
-                    cnvPuzzle.Children.Remove(shadowPieces[p.Index]);
 
                     var tt = new TranslateTransform() { X = 0, Y = 0 };
                     p.ScaleTransform.ScaleX = 1.0;
