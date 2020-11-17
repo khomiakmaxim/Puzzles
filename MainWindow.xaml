@@ -149,7 +149,7 @@
                     
                 </ScrollViewer>
             </Grid>
-            <!--Відображення цілого картинки-->
+            <!--Відображення цілої картинки-->
             <ScrollViewer Name="scvImage" Grid.Row="1" Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" HorizontalAlignment="Left" VerticalAlignment="Bottom" Visibility="Visible" Grid.RowSpan="2">
                 <Image Name="imgShowImage" Width="2000" Height="2000" HorizontalAlignment="Left" VerticalAlignment="Top" Stretch="None">
                     <Image.RenderTransform>

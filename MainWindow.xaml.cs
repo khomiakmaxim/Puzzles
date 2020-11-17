@@ -12,16 +12,13 @@ using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 
 namespace PuzzlesProj
-{
-    /// <summary>
-    /// Interaction logic for Window.xaml
-    /// </summary>
+{    
     public partial class MainWindow : Window
     {        
-        //шматок пазла, який на даний момент в руці
-        Piece currentSelection;        
-        List<Piece> pieces = new List<Piece>();
-        List<Piece> shadowPieces = new List<Piece>();
+        //шматок пазла, який на даний момент в руці-
+        Piece currentSelection;      
+        List<Piece> pieces = new List<Piece>();//всі шматки, які є наявними
+        List<Piece> shadowPieces = new List<Piece>();//всі тіневі шматки, які є наявними
         int columns;//кілкість колонок, на які все розбивається
         int rows;
         new int Width;//ширина кожного пазла
@@ -30,13 +27,13 @@ namespace PuzzlesProj
 
         //BitmapSource represents a single, constant set of pixels at a certain size and resolution.
         BitmapImage imageSource;//картинка, яка розбивається на пазли
-        string srcFileName = "";
+        string srcFileName = "";//розміщення картинки
         DropShadowBitmapEffect shadowEffect;//даний об'єкт дозволяє працювати з тінню
         ScaleTransform stZoomed = new ScaleTransform//масштабування при виборі конкретного пазлу
         {   ScaleX = 1.1,
             ScaleY = 1.1
         };        
-        //матриця пікселів для алгоритму
+        //список матриць пікселів для алгоритму
         List<List<List<Pixel>>> chunks = new List<List<List<Pixel>>>();
         //перестановка, згенерована алгоритмом
         List<int> permResult = new List<int>();
@@ -113,8 +110,7 @@ namespace PuzzlesProj
             }
 
             rSelection.SetValue(Canvas.ZIndexProperty, 5000);
-            cnvPuzzle.Children.Add(rSelection);
-            
+            cnvPuzzle.Children.Add(rSelection);            
 
             imgShowImage.Source = imageSource;
 
@@ -138,11 +134,11 @@ namespace PuzzlesProj
 
                     //відповідна тінь
                     var shadowPiece = new Piece(imageSource, x, y, rows, columns, false, index, scale);
-                    shadowPiece.SetValue(Canvas.ZIndexProperty, x * rows + y);                    
+                    shadowPiece.SetValue(Canvas.ZIndexProperty, x * rows + y);                   
                         
                     pieces.Add(piece);
                     shadowPieces.Add(shadowPiece);
-                    index++;               
+                    index++;             
                 }
             }
             
@@ -152,8 +148,7 @@ namespace PuzzlesProj
             {
                 honesty.Add(new Tuple<List<List<Pixel>>, Piece>(chunks[i], pieces[i]));
             }
-
-            var shuffledPieces = pieces.OrderBy(i => Guid.NewGuid()).ToList();
+            
             var shuffled = honesty.OrderBy(i => Guid.NewGuid()).ToList();
             int it = 0;
             //заповнення панелі вибору
@@ -185,8 +180,8 @@ namespace PuzzlesProj
             permResult = slvr.GeneratePerm(chunks);
             Mouse.OverrideCursor = null;
             
-            //permResult - така перестановка, яка отримала на вхід пошафлені дані і згенерувала таку перестановку,
-            //яку вважає складеним пазлом                        
+            //permResult - така перестановка, яка побудувалася, коли на вхід алгоритму прийшли пошафлені дані і на вихід вийшла така перестановка,
+            //яку алгоритм вважає складеним пазлом                        
         }
 
         //складання пазлу в залежності від перестановки, яку видав алгоритм
@@ -231,7 +226,7 @@ namespace PuzzlesProj
             }
         }
 
-        //скидання всіх можливих прив'язок, потірбне при створенні нового пазлу
+        //скидання всіх можливих прив'язок, потрібне при створенні нового пазлу
         private void DestroyReferences()
         {
             for (var i = cnvPuzzle.Children.Count - 1; i >= 0; i--)
@@ -284,7 +279,7 @@ namespace PuzzlesProj
             this.Height = (int)imageSource.Height / rows;
 
 
-            var bi = new BitmapImage(new Uri(srcFileName));
+            //var bi = new BitmapImage(new Uri(srcFileName));
             //кисть якою замальовується пазл
             var imgBrush = new ImageBrush(imageSource);
             
