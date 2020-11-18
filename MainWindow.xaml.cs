@@ -130,7 +130,6 @@ namespace PuzzlesProj
                     
                     piece.MouseLeftButtonUp += new MouseButtonEventHandler(piece_MouseLeftButtonUp);
                     piece.MouseRightButtonUp += new MouseButtonEventHandler(piece_MouseRightButtonUp);                                            
-
                         
                     pieces.Add(piece);
                     index++;             
@@ -148,9 +147,7 @@ namespace PuzzlesProj
             int it = 0;
             //заповнення панелі вибору
             foreach (var p in shuffled)
-            {
-                Random random = new Random();
-
+            {                
                 p.Item2.ScaleTransform.ScaleX = 1.0;
                 p.Item2.ScaleTransform.ScaleY = 1.0;
                 p.Item2.X = -1;
@@ -170,7 +167,7 @@ namespace PuzzlesProj
                 chunks[i] = shuffled[i].Item1;
             }
 
-            Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+            Mouse.OverrideCursor = Cursors.Wait;
             ISolver slvr = new Solver(rows, columns, Width, Height);            
             permResult = slvr.GeneratePerm(chunks);
             Mouse.OverrideCursor = null;
@@ -215,7 +212,7 @@ namespace PuzzlesProj
                 BitmapEncoder enc = new BmpBitmapEncoder();
                 enc.Frames.Add(BitmapFrame.Create(bitmapImage));
                 enc.Save(outStream);
-                System.Drawing.Bitmap bitmap = new System.Drawing.Bitmap(outStream);
+                Bitmap bitmap = new Bitmap(outStream);
 
                 return new Bitmap(bitmap);
             }
@@ -465,8 +462,7 @@ namespace PuzzlesProj
             }
         }
                
-
-        //обробник події натиску мишки на пазлик
+        
         void piece_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             alg.IsEnabled = false;

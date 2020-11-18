@@ -21,6 +21,7 @@ namespace PuzzlesProj
             this.Height = Height;
         }
 
+        //знаходження вартості між горизонтальними гранями двох чанків
         private int LRCheck(List<List<Pixel>> l, List<List<Pixel>> r)
         {
             int n = Height;
@@ -36,6 +37,7 @@ namespace PuzzlesProj
             return res;
         }
 
+        //знаходження вартості між вертикальними гранями двох чанків
         private int UDCheck(List<List<Pixel>> u, List<List<Pixel>> d)
         {
             int n = Width;
@@ -52,6 +54,7 @@ namespace PuzzlesProj
             return res;
         }
 
+        //знаходження матриці вартості для всіх наявних чанків
         private Tuple<List<List<int>>, List<List<int>>> Precalc(List<List<List<Pixel>>> chunks)
         {
             int m = chunks.Count;
@@ -85,6 +88,7 @@ namespace PuzzlesProj
             return new Tuple<List<List<int>>, List<List<int>>>(LR, UD);
         }
 
+        //обрахування загальної вартості, яка використовується в методі GeneratePerm
         private long totalCost(List<int> perm, List<List<int>> LR, List<List<int>> UD)
         {
             long res = 0;
@@ -131,8 +135,9 @@ namespace PuzzlesProj
             }
         }
 
+        //знаходження "хорошої перестановки"
         private List<int> Solve(List<List<int>> LR, List<List<int>> UD, double coeff, int start_chunk)
-        {            
+        {                        
             int mnI = rows - 1;
             int mxI = rows - 1;
             int mnJ = columns - 1;
@@ -183,8 +188,7 @@ namespace PuzzlesProj
                     good_neighbours.Add(i);
                 }
                 neighbours = good_neighbours;
-                double mnCost = 1e15;
-                int bestChunk = m + 1;
+                double mnCost = 1e15;                
                 //розглядаються лише доступні варіанти для вставки                
                 foreach (var i in neighbours)
                 {
@@ -219,7 +223,7 @@ namespace PuzzlesProj
                                 sm += score;
                             }
                         }
-                        maksym.Last().Add(new Tuple<double, int>((double)sm / (double)cnt, ch));
+                        maksym.Last().Add(new Tuple<double, int>((double)sm / cnt, ch));
                     }
                     mnCost = Math.Min(mnCost, maksym.Last().First().Item1);
                 }
@@ -272,7 +276,7 @@ namespace PuzzlesProj
                         continue;
                     if (ans[ni][nj] == -1 && neighbours.Where(c => c.Item1 == ni && c.Item2 == nj).Count() == 0)
                     {
-                        //добавлення нового кандидата до списку
+                        //добавлення нових кандидатів до списку
                         neighbours.Add(new Tuple<int, int>(ni, nj));
                     }
                 }

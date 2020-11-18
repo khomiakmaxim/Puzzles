@@ -57,7 +57,7 @@ namespace PuzzlesProj
             {
                 Stroke = new SolidColorBrush(Colors.Gray),
                 StrokeThickness = 0
-            };            
+            };      
             shadowPath = new Path
             {
                 Stroke = new SolidColorBrush(Colors.Black),
@@ -120,17 +120,17 @@ namespace PuzzlesProj
                                 
             this.Width = Width * scale;
             this.Height = Height * scale;
-            
+
             if (isShadow)
                 this.Children.Add(shadowPath);
             else
-                this.Children.Add(path);            
+                this.Children.Add(path);    
         }                            
 
         public void Rotate(double rotationAngle)
         {                                                                    
             var rt1 = (RotateTransform)tg1.Children[1];
-            var rt2 = (RotateTransform)tg2.Children[1];//тінь теж повертаєтья на цей кут
+            var rt2 = (RotateTransform)tg2.Children[1];
 
             angle += rotationAngle;//кут нового повороту 
 
